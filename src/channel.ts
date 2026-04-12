@@ -9,7 +9,6 @@ import type {
 } from "openclaw/plugin-sdk/channel-plugin-common";
 import {
   applyAccountNameToChannelSection,
-  buildChannelConfigSchema,
   DEFAULT_ACCOUNT_ID,
   deleteAccountFromConfigSection,
   formatPairingApproveHint,
@@ -26,7 +25,7 @@ import {
   checkZaloPersonalAuthenticated,
   type ResolvedZaloPersonalAccount,
 } from "./accounts.js";
-import { ZaloPersonalConfigSchema } from "./config-schema.js";
+import { ZaloPersonalConfigSchema, ZaloPersonalChannelConfigSchema } from "./config-schema.js";
 import { zaloPersonalOnboardingAdapter } from "./onboarding.js";
 import { probeZaloPersonal } from "./probe.js";
 import { sendMessageZaloPersonal, isLocalFilePath } from "./send.js";
@@ -154,7 +153,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     blockStreaming: true,
   },
   reload: { configPrefixes: ["channels['zalo-personal']"] },
-  configSchema: buildChannelConfigSchema(ZaloPersonalConfigSchema),
+  configSchema: ZaloPersonalChannelConfigSchema,
   config: {
     listAccountIds: (cfg) => listZaloPersonalAccountIds(cfg),
     resolveAccount: (cfg, accountId) => resolveZaloPersonalAccountSync({ cfg, accountId }),
