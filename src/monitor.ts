@@ -15,13 +15,12 @@ function resolveMentionGatingWithBypass(params: {
   return { shouldSkip: true };
 }
 
-import { ThreadType, FriendEventType, Reactions, type API, type Message, type UserMessage, type GroupMessage, type FriendEvent, type Reaction, type Typing } from "zca-js";
+import { ThreadType, FriendEventType, Reactions, type API, type Message, type UserMessage, type GroupMessage, type FriendEvent, type Reaction, type Typing, type SendMessageQuote } from "zca-js";
 import type { ResolvedOpclawZaloAccount, OpclawZaloFriend, OpclawZaloGroup, OpclawZaloMessage } from "./types.js";
 import { getOpclawZaloRuntime } from "./runtime.js";
 import { sendMessageOpclawZalo } from "./send.js";
 import { getApi, getCurrentUid } from "./zalo-client.js";
 import { downloadImagesFromUrls } from "./image-downloader.js";
-import { getThreadMediaDir } from "./thread-sandbox.js";
 import { addPendingRequest, removePendingRequest } from "./friend-request-store.js";
 import { recordReadReceipt } from "./features/read-receipt.js";
 import { recordMsgId } from "./features/msg-id-store.js";
@@ -51,11 +50,13 @@ const groupMessageBuffer = new Map<string, Array<{
   senderName: string;
   content: string;
   timestamp: number;
+  mediaUrls?: string[];
+  localMediaPaths?: string[];
 }>>();
 const GROUP_BUFFER_MAX_MESSAGES = 50;
 const GROUP_BUFFER_MAX_AGE_S = 4 * 60 * 60;
 
-function bufferGroupMessage(groupId: string, entry: { senderName: string; content: string; timestamp: number }): void {
+function bufferGroupMessage(groupId: string, entry: { senderName: string; content: string; timestamp: number; mediaUrls?: string[]; localMediaPaths?: string[] }): void {
   let buffer = groupMessageBuffer.get(groupId) ?? [];
   buffer.push(entry);
   const cutoff = Math.floor(Date.now() / 1000) - GROUP_BUFFER_MAX_AGE_S;
@@ -63,12 +64,64 @@ function bufferGroupMessage(groupId: string, entry: { senderName: string; conten
   groupMessageBuffer.set(groupId, buffer);
 }
 
-function consumeGroupBuffer(groupId: string): string {
+function consumeGroupBuffer(groupId: string): { text: string; mediaPaths: string[] } {
   const buffer = groupMessageBuffer.get(groupId);
-  if (!buffer || buffer.length === 0) return "";
-  const lines = buffer.map(m => `[${m.senderName}]: ${m.content}`);
+  if (!buffer || buffer.length === 0) return { text: "", mediaPaths: [] };
+  const allMediaPaths: string[] = [];
+  const lines = buffer.map(m => {
+    if (m.localMediaPaths) allMediaPaths.push(...m.localMediaPaths);
+    return `[${m.senderName}]: ${m.content}`;
+  });
   groupMessageBuffer.delete(groupId);
-  return lines.join("\n");
+  return { text: lines.join("\n"), mediaPaths: allMediaPaths };
+}
+
+// --- Inbound message cache: stores last inbound message per thread for quote-reply ---
+const lastInboundMessage = new Map<string, {
+  msgId: string;
+  cliMsgId: string;
+  content: string;
+  msgType: number;
+  uidFrom: string;
+  ts: number;
+  ttl: number;
+  propertyExt?: Record<string, unknown>;
+}>();
+const INBOUND_CACHE_MAX = 500;
+
+function cacheInboundMessage(threadId: string, data: {
+  msgId: string; cliMsgId: string; content: string; msgType: number;
+  uidFrom: string; ts: number; ttl: number; propertyExt?: Record<string, unknown>;
+}): void {
+  if (lastInboundMessage.size >= INBOUND_CACHE_MAX && !lastInboundMessage.has(threadId)) {
+    const oldest = lastInboundMessage.keys().next().value;
+    if (oldest) lastInboundMessage.delete(oldest);
+  }
+  lastInboundMessage.set(threadId, {
+    msgId: data.msgId,
+    cliMsgId: data.cliMsgId,
+    content: data.content,
+    msgType: data.msgType ?? 0,
+    uidFrom: data.uidFrom,
+    ts: data.ts,
+    ttl: data.ttl ?? 0,
+    propertyExt: data.propertyExt,
+  });
+}
+
+function getQuoteForThread(threadId: string): SendMessageQuote | undefined {
+  const cached = lastInboundMessage.get(threadId);
+  if (!cached) return undefined;
+  return {
+    content: cached.content,
+    msgType: cached.msgType,
+    propertyExt: cached.propertyExt ?? {},
+    uidFrom: cached.uidFrom,
+    msgId: cached.msgId,
+    cliMsgId: cached.cliMsgId,
+    ts: cached.ts,
+    ttl: cached.ttl,
+  };
 }
 
 async function resolveUserName(userId: string): Promise<string> {
@@ -282,6 +335,27 @@ function convertToOpclawZaloMessage(msg: Message): OpclawZaloMessage | null {
 
   if (!content.trim() && mediaUrls.length === 0) return null;
 
+  // Extract quoted/replied message media (Zalo sends image separately from mention)
+  const quote = (data as any).quote as { ownerId?: string; msg?: string; attach?: string; fromD?: string } | undefined;
+  if (quote?.attach) {
+    try {
+      const attachData = JSON.parse(quote.attach);
+      const attachList = Array.isArray(attachData) ? attachData : [attachData];
+      for (const item of attachList) {
+        const url = item.href || item.url || item.thumb;
+        if (url && !mediaUrls.includes(url)) {
+          mediaUrls.push(url);
+          const t = (item.type || "").toLowerCase();
+          if (t.includes("photo") || t.includes("image")) mediaTypes.push("image/jpeg");
+          else if (t.includes("video")) mediaTypes.push("video/mp4");
+          else mediaTypes.push("image/jpeg"); // default assume image
+        }
+      }
+    } catch {
+      // attach not parseable JSON, skip
+    }
+  }
+
   const isGroup = msg.type === ThreadType.Group;
   const threadId = msg.threadId;
   const rawSenderId = data.uidFrom;
@@ -326,6 +400,20 @@ async function processMessage(
   // Record msgId→cliMsgId mapping for reaction/undo lookups
   if (message.msgId && message.cliMsgId) {
     recordMsgId(message.msgId, message.cliMsgId, threadId, metadata?.isGroup ?? false);
+  }
+
+  // Cache inbound message for quote-reply support
+  if (message.msgId && message.cliMsgId) {
+    cacheInboundMessage(threadId, {
+      msgId: message.msgId,
+      cliMsgId: message.cliMsgId,
+      content: typeof message.content === "string" ? message.content : "",
+      msgType: (message as any).rawMsgType ?? 0,
+      uidFrom: metadata?.fromId ?? "",
+      ts: timestamp ?? Math.floor(Date.now() / 1000),
+      ttl: 0,
+      propertyExt: (message as any).propertyExt,
+    });
   }
 
   const isGroup = metadata?.isGroup ?? false;
@@ -443,6 +531,7 @@ async function processMessage(
   const hasControlCommand = core.channel.commands.isControlCommandMessage(rawBody, config);
 
   if (isGroup && resolvedRequireMention) {
+    const hasMedia = (message.mediaUrls?.length ?? 0) > 0;
     const mentionGate = resolveMentionGatingWithBypass({
       isGroup: true,
       requireMention: true,
@@ -453,14 +542,22 @@ async function processMessage(
       commandAuthorized: commandAuthorized === true,
     });
 
-    if (mentionGate.shouldSkip) {
+    if (mentionGate.shouldSkip && !hasMedia) {
       const resolvedName = senderName || await resolveUserName(senderId);
+      // Download media for buffered messages too, so they're available when bot is mentioned later
+      let bufferedLocalPaths: string[] | undefined;
+      if (message.mediaUrls && message.mediaUrls.length > 0) {
+        const downloaded = await downloadImagesFromUrls(message.mediaUrls);
+        bufferedLocalPaths = downloaded.filter((p): p is string => p !== undefined);
+      }
       bufferGroupMessage(chatId, {
         senderName: resolvedName,
         content: rawBody,
         timestamp: timestamp ?? Math.floor(Date.now() / 1000),
+        mediaUrls: message.mediaUrls,
+        localMediaPaths: bufferedLocalPaths,
       });
-      logVerbose(core, runtime, `Buffered non-mention message in group ${chatId}`);
+      logVerbose(core, runtime, `Buffered non-mention message in group ${chatId} from ${senderId}`);
       return;
     }
   }
@@ -480,6 +577,16 @@ async function processMessage(
   const fromLabel = isGroup
     ? await resolveGroupName(chatId)
     : resolvedSenderName || `user:${senderId}`;
+
+  // Auto-typing: immediately show typing indicator when processing starts
+  try {
+    const api = await getApi();
+    const type = isGroup ? ThreadType.Group : ThreadType.User;
+    await api.sendTypingEvent(chatId, type);
+  } catch {
+    // fire-and-forget — typing failure should never block message processing
+  }
+
   const storePath = core.channel.session.resolveStorePath(config.session?.store, {
     agentId: route.agentId,
   });
@@ -489,31 +596,81 @@ async function processMessage(
     sessionKey: route.sessionKey,
   });
 
-  const bufferedContext = isGroup ? consumeGroupBuffer(chatId) : "";
+  const bufferedContext = isGroup ? consumeGroupBuffer(chatId) : { text: "", mediaPaths: [] };
+  const bufferedMediaPaths = bufferedContext.mediaPaths ?? [];
 
+  // Prepend sender context for group messages so the AI knows who sent what
   let bodyWithSender = isGroup
     ? `[userId: ${senderId}, name: ${resolvedSenderName}]: ${rawBody}`
     : rawBody;
 
-  if (bufferedContext) {
-    bodyWithSender = `[Recent group chat (context only, not addressed to you):\n${bufferedContext}\n]\n\n${bodyWithSender}`;
+  if (bufferedContext.text) {
+    bodyWithSender = `[Recent group chat (context only, not addressed to you):\n${bufferedContext.text}\n]\n\n${bodyWithSender}`;
   }
 
-  // Download media
+  // --- Auto fetch user info for mentioned users (excluding self) ---
+  if (isGroup && message.mentions && message.mentions.length > 0) {
+    const mentionedUserIds = message.mentions
+      .filter(m => m.type === 0 && m.uid && m.uid !== getCurrentUid()) // type 0 = user, skip bot self
+      .map(m => m.uid);
+
+    if (mentionedUserIds.length > 0) {
+      try {
+        const api = await getApi();
+        const userInfos: string[] = [];
+        for (const uid of mentionedUserIds) {
+          try {
+            const result = await api.getUserInfo(uid);
+            const info = (result as any)?.changed_profiles?.[uid];
+            if (info) {
+              const name = info.displayName ?? info.zaloName ?? uid;
+              const gender = info.gender ? ` | gender: ${info.gender}` : "";
+              const dob = info.dob ? ` | dob: ${info.dob}` : "";
+              userInfos.push(`  - @${name} (userId: ${uid}${gender}${dob})`);
+            } else {
+              userInfos.push(`  - userId: ${uid} (profile not available)`);
+            }
+          } catch {
+            userInfos.push(`  - userId: ${uid} (lookup failed)`);
+          }
+        }
+        if (userInfos.length > 0) {
+          bodyWithSender = `[Mentioned users:\n${userInfos.join("\n")}\n]\n\n${bodyWithSender}`;
+        }
+      } catch {
+        // getApi failed — skip mention enrichment
+      }
+    }
+  }
+
+  // Download media URLs to local files for native image support
   let localMediaPaths: string[] | undefined;
   if (message.mediaUrls && message.mediaUrls.length > 0) {
-    const threadMediaDir = getThreadMediaDir(chatId);
-    const downloadedPaths = await downloadImagesFromUrls(message.mediaUrls, threadMediaDir);
+    console.log(`[opclaw-zalo] Downloading ${message.mediaUrls.length} images for native image support...`);
+    const downloadedPaths = await downloadImagesFromUrls(message.mediaUrls);
     localMediaPaths = downloadedPaths.filter((p): p is string => p !== undefined);
+
+    if (localMediaPaths.length > 0) {
+      console.log(`[opclaw-zalo] Downloaded ${localMediaPaths.length} images → ${localMediaPaths.join(", ")}`);
+    }
   }
 
+  // Merge buffered media paths from previous group messages (images sent before @mention)
+  const allMediaPaths = [
+    ...(localMediaPaths ?? []),
+    ...bufferedMediaPaths,
+  ];
+  if (allMediaPaths.length > (localMediaPaths?.length ?? 0) && bufferedMediaPaths.length > 0) {
+    console.log(`[opclaw-zalo] Injecting ${bufferedMediaPaths.length} buffered image(s) from group context`);
+  }
+  const effectiveLocalMediaPaths = allMediaPaths.length > 0 ? allMediaPaths : undefined;
+
+  // Append media to body - use LOCAL paths if downloaded, otherwise URLs
   let bodyForEnvelope = bodyWithSender;
-  if (localMediaPaths && localMediaPaths.length > 0) {
-    const mediaInfo = localMediaPaths.map((p, idx) => `[Image ${idx + 1}: ${p}]`).join('\n');
+  const mediaPathsForBody = effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : message.mediaUrls;
+  if (mediaPathsForBody && mediaPathsForBody.length > 0) {
+    const mediaInfo = mediaPathsForBody.map((p, idx) => `[Image ${idx + 1}: ${p}]`).join('\n');
     bodyForEnvelope = `${bodyWithSender}\n\n${mediaInfo}`;
-  } else if (message.mediaUrls && message.mediaUrls.length > 0) {
-    // Download failed — don't expose CDN URLs (SSRF blocked). Tell agent an image was sent.
-    bodyForEnvelope = `${bodyWithSender}\n\n[User sent ${message.mediaUrls.length} image(s) but download failed — image not available]`;
   }
 
   const body = core.channel.reply.formatAgentEnvelope({
@@ -543,8 +700,12 @@ async function processMessage(
     MessageSid: message.msgId ?? `${timestamp}`,
     OriginatingChannel: "opclaw-zalo",
     OriginatingTo: `'opclaw-zalo':${chatId}`,
-    MediaUrls: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths : undefined,
-    MediaUrl: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths[0] : undefined,
+    WasMentioned: wasMentioned || undefined,
+    // MediaPaths = local file paths (downloaded + buffered), MediaUrls = remote URLs fallback
+    MediaPaths: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : undefined,
+    MediaPath: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths[0] : undefined,
+    MediaUrls: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : message.mediaUrls,
+    MediaUrl: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : message.mediaUrls?.[0],
     MediaTypes: message.mediaTypes,
   });
 
@@ -636,6 +797,9 @@ async function processMessage(
     },
   });
 
+  // Get quote for reply-to-specific-message
+  const quoteForReply = getQuoteForThread(chatId);
+
   try {
     await core.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
       ctx: ctxPayload,
@@ -652,6 +816,7 @@ async function processMessage(
             config,
             accountId: account.accountId,
             statusSink,
+            quote: quoteForReply,
             tableMode: core.channel.text.resolveMarkdownTableMode({
               cfg: config,
               channel: "opclaw-zalo",
@@ -732,6 +897,7 @@ async function deliverOpclawZaloReply(params: {
   config: OpenClawConfig;
   accountId?: string;
   statusSink?: (patch: { lastInboundAt?: number; lastOutboundAt?: number }) => void;
+  quote?: SendMessageQuote;
   tableMode?: MarkdownTableMode;
 }): Promise<void> {
   const { payload, chatId, isGroup, runtime, core, config, accountId, statusSink } = params;
@@ -756,13 +922,21 @@ async function deliverOpclawZaloReply(params: {
       ? [payload.mediaUrl]
       : [];
 
+  // Quote is only attached to the first outbound message (first media or first chunk)
+  let quoteUsed = false;
+  const getQuoteOnce = () => {
+    if (quoteUsed || !params.quote) return undefined;
+    quoteUsed = true;
+    return params.quote;
+  };
+
   if (mediaList.length > 0) {
     let first = true;
     for (const mediaUrl of mediaList) {
       const caption = first ? text : undefined;
       first = false;
       try {
-        await sendMessageOpclawZalo(chatId, caption ?? "", { mediaUrl, isGroup });
+        await sendMessageOpclawZalo(chatId, caption ?? "", { mediaUrl, isGroup, quote: getQuoteOnce() });
         statusSink?.({ lastOutboundAt: Date.now() });
       } catch (err) {
         runtime.error(`Media send failed: ${String(err)}`);
@@ -777,7 +951,7 @@ async function deliverOpclawZaloReply(params: {
     logVerbose(core, runtime, `Sending ${chunks.length} text chunk(s) to ${chatId}`);
     for (const chunk of chunks) {
       try {
-        await sendMessageOpclawZalo(chatId, chunk, { isGroup });
+        await sendMessageOpclawZalo(chatId, chunk, { isGroup, quote: getQuoteOnce() });
         statusSink?.({ lastOutboundAt: Date.now() });
       } catch (err) {
         runtime.error(`Message send failed: ${String(err)}`);
@@ -980,6 +1154,35 @@ export async function monitorOpclawZaloProvider(
         return;
       }
       listenersRegistered = true;
+
+      // --- Prefill group message buffer from chat history on startup ---
+      const groupIds = Object.keys(account.config.groups ?? {}).filter(k => k.startsWith("group:") || /^\d+$/.test(k));
+      if (groupIds.length > 0) {
+        for (const groupId of groupIds) {
+          try {
+            const history = await api.getGroupChatHistory(groupId, 20);
+            const msgs = (history as any)?.groupMsgs ?? [];
+            for (const gm of msgs) {
+              const gmData = (gm as any).data ?? gm;
+              const gmContent = typeof gmData.content === "string" ? gmData.content : "";
+              const gmSenderName = gmData.dName ?? gmData.uidFrom ?? "unknown";
+              const gmTs = gmData.ts ? parseInt(gmData.ts, 10) : 0;
+              if (gmContent && gmTs > 0) {
+                bufferGroupMessage(groupId, {
+                  senderName: gmSenderName,
+                  content: gmContent,
+                  timestamp: gmTs,
+                });
+              }
+            }
+            if (msgs.length > 0) {
+              logVerbose(core, runtime, `[${account.accountId}] Prefilled ${msgs.length} messages for group ${groupId}`);
+            }
+          } catch (err) {
+            logVerbose(core, runtime, `[${account.accountId}] Failed to prefill history for group ${groupId}: ${String(err)}`);
+          }
+        }
+      }
 
       api.listener.on("message", (msg: Message) => {
         if (msg.isSelf) return;
