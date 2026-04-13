@@ -24,20 +24,20 @@ import { hasStoredCredentials, loginWithQR } from "./zalo-client.js";
 import { LoginQRCallbackEventType } from "zca-js";
 import { displayQRFromPNG } from "./qr-display.js";
 
-const channel = "zalo-personal" as const;
+const channel = "opclaw-zalo" as const;
 
 function setZaloPersonalDmPolicy(
   cfg: OpenClawConfig,
   dmPolicy: "pairing" | "allowlist" | "open" | "disabled",
 ): OpenClawConfig {
   const allowFrom =
-    dmPolicy === "open" ? addWildcardAllowFrom(cfg.channels?.['zalo-personal']?.allowFrom) : undefined;
+    dmPolicy === "open" ? addWildcardAllowFrom(cfg.channels?.['opclaw-zalo']?.allowFrom) : undefined;
   return {
     ...cfg,
     channels: {
       ...cfg.channels,
-      'zalo-personal': {
-        ...cfg.channels?.['zalo-personal'],
+      'opclaw-zalo': {
+        ...cfg.channels?.['opclaw-zalo'],
         dmPolicy,
         ...(allowFrom ? { allowFrom } : {}),
       },
@@ -116,8 +116,8 @@ async function promptZaloPersonalAllowFrom(params: {
         ...cfg,
         channels: {
           ...cfg.channels,
-          'zalo-personal': {
-            ...cfg.channels?.['zalo-personal'],
+          'opclaw-zalo': {
+            ...cfg.channels?.['opclaw-zalo'],
             enabled: true,
             dmPolicy: "allowlist",
             allowFrom: unique,
@@ -129,14 +129,14 @@ async function promptZaloPersonalAllowFrom(params: {
       ...cfg,
       channels: {
         ...cfg.channels,
-        'zalo-personal': {
-          ...cfg.channels?.['zalo-personal'],
+        'opclaw-zalo': {
+          ...cfg.channels?.['opclaw-zalo'],
           enabled: true,
           accounts: {
-            ...cfg.channels?.['zalo-personal']?.accounts,
+            ...cfg.channels?.['opclaw-zalo']?.accounts,
             [accountId]: {
-              ...cfg.channels?.['zalo-personal']?.accounts?.[accountId],
-              enabled: cfg.channels?.['zalo-personal']?.accounts?.[accountId]?.enabled ?? true,
+              ...cfg.channels?.['opclaw-zalo']?.accounts?.[accountId],
+              enabled: cfg.channels?.['opclaw-zalo']?.accounts?.[accountId]?.enabled ?? true,
               dmPolicy: "allowlist",
               allowFrom: unique,
             },
@@ -157,7 +157,7 @@ function setZaloPersonalGroupPolicy(
       ...cfg,
       channels: {
         ...cfg.channels,
-        'zalo-personal': { ...cfg.channels?.['zalo-personal'], enabled: true, groupPolicy },
+        'opclaw-zalo': { ...cfg.channels?.['opclaw-zalo'], enabled: true, groupPolicy },
       },
     } as OpenClawConfig;
   }
@@ -165,14 +165,14 @@ function setZaloPersonalGroupPolicy(
     ...cfg,
     channels: {
       ...cfg.channels,
-      'zalo-personal': {
-        ...cfg.channels?.['zalo-personal'],
+      'opclaw-zalo': {
+        ...cfg.channels?.['opclaw-zalo'],
         enabled: true,
         accounts: {
-          ...cfg.channels?.['zalo-personal']?.accounts,
+          ...cfg.channels?.['opclaw-zalo']?.accounts,
           [accountId]: {
-            ...cfg.channels?.['zalo-personal']?.accounts?.[accountId],
-            enabled: cfg.channels?.['zalo-personal']?.accounts?.[accountId]?.enabled ?? true,
+            ...cfg.channels?.['opclaw-zalo']?.accounts?.[accountId],
+            enabled: cfg.channels?.['opclaw-zalo']?.accounts?.[accountId]?.enabled ?? true,
             groupPolicy,
           },
         },
@@ -192,7 +192,7 @@ function setZaloPersonalGroupAllowlist(
       ...cfg,
       channels: {
         ...cfg.channels,
-        'zalo-personal': { ...cfg.channels?.['zalo-personal'], enabled: true, groups },
+        'opclaw-zalo': { ...cfg.channels?.['opclaw-zalo'], enabled: true, groups },
       },
     } as OpenClawConfig;
   }
@@ -200,14 +200,14 @@ function setZaloPersonalGroupAllowlist(
     ...cfg,
     channels: {
       ...cfg.channels,
-      'zalo-personal': {
-        ...cfg.channels?.['zalo-personal'],
+      'opclaw-zalo': {
+        ...cfg.channels?.['opclaw-zalo'],
         enabled: true,
         accounts: {
-          ...cfg.channels?.['zalo-personal']?.accounts,
+          ...cfg.channels?.['opclaw-zalo']?.accounts,
           [accountId]: {
-            ...cfg.channels?.['zalo-personal']?.accounts?.[accountId],
-            enabled: cfg.channels?.['zalo-personal']?.accounts?.[accountId]?.enabled ?? true,
+            ...cfg.channels?.['opclaw-zalo']?.accounts?.[accountId],
+            enabled: cfg.channels?.['opclaw-zalo']?.accounts?.[accountId]?.enabled ?? true,
             groups,
           },
         },
@@ -265,9 +265,9 @@ async function resolveZaloPersonalGroups(params: {
 const dmPolicy: ChannelOnboardingDmPolicy = {
   label: "Zalo JS",
   channel,
-  policyKey: "channels['zalo-personal'].dmPolicy",
-  allowFromKey: "channels['zalo-personal'].allowFrom",
-  getCurrent: (cfg) => (cfg.channels?.['zalo-personal']?.dmPolicy ?? "open") as "open",
+  policyKey: "channels['opclaw-zalo'].dmPolicy",
+  allowFromKey: "channels['opclaw-zalo'].allowFrom",
+  getCurrent: (cfg) => (cfg.channels?.['opclaw-zalo']?.dmPolicy ?? "open") as "open",
   setPolicy: (cfg, policy) => setZaloPersonalDmPolicy(cfg, policy),
   promptAllowFrom: async ({ cfg, prompter, accountId }) => {
     const id =
@@ -332,7 +332,7 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
     shouldPromptAccountIds,
     forceAllowFrom,
   }) => {
-    const zaloPersonalOverride = accountOverrides['zalo-personal']?.trim();
+    const zaloPersonalOverride = accountOverrides['opclaw-zalo']?.trim();
     const defaultAccountId = resolveDefaultZaloPersonalAccountId(cfg);
     let accountId = zaloPersonalOverride ? normalizeAccountId(zaloPersonalOverride) : defaultAccountId;
 
@@ -385,13 +385,13 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
         ...next,
         channels: {
           ...next.channels,
-          'zalo-personal': {
-            ...next.channels?.['zalo-personal'],
+          'opclaw-zalo': {
+            ...next.channels?.['opclaw-zalo'],
             enabled: true,
             accounts: {
-              ...next.channels?.['zalo-personal']?.accounts,
+              ...next.channels?.['opclaw-zalo']?.accounts,
               [DEFAULT_ACCOUNT_ID]: {
-                ...next.channels?.['zalo-personal']?.accounts?.[DEFAULT_ACCOUNT_ID],
+                ...next.channels?.['opclaw-zalo']?.accounts?.[DEFAULT_ACCOUNT_ID],
                 enabled: true,
               },
             },
@@ -403,13 +403,13 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
         ...next,
         channels: {
           ...next.channels,
-          'zalo-personal': {
-            ...next.channels?.['zalo-personal'],
+          'opclaw-zalo': {
+            ...next.channels?.['opclaw-zalo'],
             enabled: true,
             accounts: {
-              ...next.channels?.['zalo-personal']?.accounts,
+              ...next.channels?.['opclaw-zalo']?.accounts,
               [accountId]: {
-                ...next.channels?.['zalo-personal']?.accounts?.[accountId],
+                ...next.channels?.['opclaw-zalo']?.accounts?.[accountId],
                 enabled: true,
               },
             },

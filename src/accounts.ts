@@ -4,7 +4,7 @@ import type { ResolvedZaloPersonalAccount, ZaloPersonalAccountConfig, ZaloPerson
 import { hasStoredCredentials } from "./zalo-client.js";
 
 function listConfiguredAccountIds(cfg: OpenClawConfig): string[] {
-  const accounts = (cfg.channels?.['zalo-personal'] as ZaloPersonalConfig | undefined)?.accounts;
+  const accounts = (cfg.channels?.['opclaw-zalo'] as ZaloPersonalConfig | undefined)?.accounts;
   if (!accounts || typeof accounts !== "object") return [];
   return Object.keys(accounts).filter(Boolean);
 }
@@ -16,7 +16,7 @@ export function listZaloPersonalAccountIds(cfg: OpenClawConfig): string[] {
 }
 
 export function resolveDefaultZaloPersonalAccountId(cfg: OpenClawConfig): string {
-  const zaloPersonalConfig = cfg.channels?.['zalo-personal'] as ZaloPersonalConfig | undefined;
+  const zaloPersonalConfig = cfg.channels?.['opclaw-zalo'] as ZaloPersonalConfig | undefined;
   if (zaloPersonalConfig?.defaultAccount?.trim()) return zaloPersonalConfig.defaultAccount.trim();
   const ids = listZaloPersonalAccountIds(cfg);
   if (ids.includes(DEFAULT_ACCOUNT_ID)) return DEFAULT_ACCOUNT_ID;
@@ -27,13 +27,13 @@ function resolveAccountConfig(
   cfg: OpenClawConfig,
   accountId: string,
 ): ZaloPersonalAccountConfig | undefined {
-  const accounts = (cfg.channels?.['zalo-personal'] as ZaloPersonalConfig | undefined)?.accounts;
+  const accounts = (cfg.channels?.['opclaw-zalo'] as ZaloPersonalConfig | undefined)?.accounts;
   if (!accounts || typeof accounts !== "object") return undefined;
   return accounts[accountId] as ZaloPersonalAccountConfig | undefined;
 }
 
 function mergeZaloPersonalAccountConfig(cfg: OpenClawConfig, accountId: string): ZaloPersonalAccountConfig {
-  const raw = (cfg.channels?.['zalo-personal'] ?? {}) as ZaloPersonalConfig;
+  const raw = (cfg.channels?.['opclaw-zalo'] ?? {}) as ZaloPersonalConfig;
   const { accounts: _ignored, defaultAccount: _ignored2, ...base } = raw;
   const account = resolveAccountConfig(cfg, accountId) ?? {};
   return { ...base, ...account };
@@ -49,7 +49,7 @@ export async function resolveZaloPersonalAccount(params: {
 }): Promise<ResolvedZaloPersonalAccount> {
   const accountId = normalizeAccountId(params.accountId);
   const baseEnabled =
-    (params.cfg.channels?.['zalo-personal'] as ZaloPersonalConfig | undefined)?.enabled !== false;
+    (params.cfg.channels?.['opclaw-zalo'] as ZaloPersonalConfig | undefined)?.enabled !== false;
   const merged = mergeZaloPersonalAccountConfig(params.cfg, accountId);
   const accountEnabled = merged.enabled !== false;
   const enabled = baseEnabled && accountEnabled;
@@ -63,7 +63,7 @@ export function resolveZaloPersonalAccountSync(params: {
 }): ResolvedZaloPersonalAccount {
   const accountId = normalizeAccountId(params.accountId);
   const baseEnabled =
-    (params.cfg.channels?.['zalo-personal'] as ZaloPersonalConfig | undefined)?.enabled !== false;
+    (params.cfg.channels?.['opclaw-zalo'] as ZaloPersonalConfig | undefined)?.enabled !== false;
   const merged = mergeZaloPersonalAccountConfig(params.cfg, accountId);
   const accountEnabled = merged.enabled !== false;
   const enabled = baseEnabled && accountEnabled;

@@ -21,7 +21,7 @@ async function readQRFromPNG(pngPath: string): Promise<string> {
 }
 
 export async function displayQRFromPNG(base64Image: string): Promise<string> {
-  const pngPath = "/tmp/openclaw-zalo-personal-qr.png";
+  const pngPath = "/tmp/opclaw-zalo-qr.png";
   try {
     const buffer = Buffer.from(base64Image, "base64");
     fs.writeFileSync(pngPath, buffer);

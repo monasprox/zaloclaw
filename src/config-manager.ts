@@ -7,7 +7,7 @@ const DEFAULT_CONFIG_PATH = join(homedir(), ".openclaw", "openclaw.json");
 
 export type OpenClawConfig = {
   channels?: {
-    "zalo-personal"?: ZaloPersonalConfig;
+    "opclaw-zalo"?: ZaloPersonalConfig;
     [key: string]: any;
   };
   [key: string]: any;
@@ -32,7 +32,7 @@ export function writeOpenClawConfig(config: OpenClawConfig, configPath = DEFAULT
 }
 
 export function getZaloPersonalConfig(config: OpenClawConfig): ZaloPersonalConfig {
-  return config.channels?.["zalo-personal"] ?? {};
+  return config.channels?.["opclaw-zalo"] ?? {};
 }
 
 export function updateZaloPersonalConfig(
@@ -43,7 +43,7 @@ export function updateZaloPersonalConfig(
     ...config,
     channels: {
       ...config.channels,
-      "zalo-personal": {
+      "opclaw-zalo": {
         ...getZaloPersonalConfig(config),
         ...updates,
       },

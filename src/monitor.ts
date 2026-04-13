@@ -15,7 +15,7 @@ function resolveMentionGatingWithBypass(params: {
   return { shouldSkip: true };
 }
 
-import { ThreadType, FriendEventType, Reactions, type API, type Message, type UserMessage, type GroupMessage, type FriendEvent } from "zca-js";
+import { ThreadType, FriendEventType, Reactions, type API, type Message, type UserMessage, type GroupMessage, type FriendEvent, type Reaction, type Typing } from "zca-js";
 import type { ResolvedZaloPersonalAccount, ZaloPersonalFriend, ZaloPersonalGroup, ZaloPersonalMessage } from "./types.js";
 import { getZaloPersonalRuntime } from "./runtime.js";
 import { sendMessageZaloPersonal } from "./send.js";
@@ -23,6 +23,7 @@ import { getApi, getCurrentUid } from "./zalo-client.js";
 import { downloadImagesFromUrls } from "./image-downloader.js";
 import { getThreadMediaDir } from "./thread-sandbox.js";
 import { addPendingRequest, removePendingRequest } from "./friend-request-store.js";
+import { recordReadReceipt } from "./features/read-receipt.js";
 import { refreshCredentials } from "./credentials.js";
 
 export type ZaloPersonalMonitorOptions = {
@@ -100,7 +101,7 @@ async function resolveGroupName(groupId: string): Promise<string> {
 }
 
 function normalizeZaloPersonalEntry(entry: string): string {
-  return entry.replace(/^(zalo-personal|zp):/i, "").trim();
+  return entry.replace(/^(opclaw-zalo|oz):/i, "").trim();
 }
 
 function buildNameIndex<T>(items: T[], nameFn: (item: T) => string | undefined): Map<string, T[]> {
@@ -119,7 +120,7 @@ type ZaloPersonalCoreRuntime = ReturnType<typeof getZaloPersonalRuntime>;
 
 function logVerbose(core: ZaloPersonalCoreRuntime, runtime: RuntimeEnv, message: string): void {
   if (core.logging.shouldLogVerbose()) {
-    runtime.log(`[zalo-personal] ${message}`);
+    runtime.log(`[opclaw-zalo] ${message}`);
   }
 }
 
@@ -127,7 +128,7 @@ function isSenderAllowed(senderId: string, allowFrom: string[]): boolean {
   if (allowFrom.includes("*")) return true;
   const normalizedSenderId = senderId.toLowerCase();
   return allowFrom.some((entry) => {
-    const normalized = entry.toLowerCase().replace(/^(zalo-personal|zp):/i, "");
+    const normalized = entry.toLowerCase().replace(/^(opclaw-zalo|oz):/i, "");
     return normalized === normalizedSenderId;
   });
 }
@@ -136,7 +137,7 @@ function isSenderDenied(senderId: string, denyFrom: string[]): boolean {
   if (denyFrom.length === 0) return false;
   const normalizedSenderId = senderId.toLowerCase();
   return denyFrom.some((entry) => {
-    const normalized = entry.toLowerCase().replace(/^(zalo-personal|zp):/i, "");
+    const normalized = entry.toLowerCase().replace(/^(opclaw-zalo|oz):/i, "");
     return normalized === normalizedSenderId;
   });
 }
@@ -337,7 +338,7 @@ async function processMessage(
   const shouldComputeAuth = core.channel.commands.shouldComputeCommandAuthorized(rawBody, config);
   const storeAllowFrom =
     !isGroup && (dmPolicy !== "open" || shouldComputeAuth)
-      ? await core.channel.pairing.readAllowFromStore("zalo-personal").catch(() => [])
+      ? await core.channel.pairing.readAllowFromStore("opclaw-zalo").catch(() => [])
       : [];
   const effectiveAllowFrom = [...configAllowFrom, ...storeAllowFrom];
   const useAccessGroups = config.commands?.useAccessGroups !== false;
@@ -360,7 +361,7 @@ async function processMessage(
       if (!senderAllowedForCommands) {
         if (dmPolicy === "pairing") {
           const { code, created } = await core.channel.pairing.upsertPairingRequest({
-            channel: "zalo-personal",
+            channel: "opclaw-zalo",
             id: senderId,
             meta: { name: senderName || undefined },
           });
@@ -370,7 +371,7 @@ async function processMessage(
               await sendMessageZaloPersonal(
                 chatId,
                 core.channel.pairing.buildPairingReply({
-                  channel: "zalo-personal",
+                  channel: "opclaw-zalo",
                   idLine: `Your Zalo user id: ${senderId}`,
                   code,
                 }),
@@ -436,7 +437,7 @@ async function processMessage(
 
   const route = core.channel.routing.resolveAgentRoute({
     cfg: config,
-    channel: "zalo-personal",
+    channel: "opclaw-zalo",
     accountId: account.accountId,
     peer: { kind: peer.kind, id: peer.id },
   });
@@ -492,8 +493,8 @@ async function processMessage(
     Body: body,
     RawBody: rawBody,
     CommandBody: rawBody,
-    From: isGroup ? `'zalo-personal':group:${chatId}` : `'zalo-personal':${senderId}`,
-    To: `'zalo-personal':${chatId}`,
+    From: isGroup ? `'opclaw-zalo':group:${chatId}` : `'opclaw-zalo':${senderId}`,
+    To: `'opclaw-zalo':${chatId}`,
     SessionKey: route.sessionKey,
     AccountId: route.accountId,
     ChatType: isGroup ? "group" : "direct",
@@ -501,11 +502,11 @@ async function processMessage(
     SenderName: resolvedSenderName || undefined,
     SenderId: senderId,
     CommandAuthorized: commandAuthorized,
-    Provider: "zalo-personal",
-    Surface: "zalo-personal",
+    Provider: "opclaw-zalo",
+    Surface: "opclaw-zalo",
     MessageSid: message.msgId ?? `${timestamp}`,
-    OriginatingChannel: "zalo-personal",
-    OriginatingTo: `'zalo-personal':${chatId}`,
+    OriginatingChannel: "opclaw-zalo",
+    OriginatingTo: `'opclaw-zalo':${chatId}`,
     MediaUrls: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths : message.mediaUrls,
     MediaUrl: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths[0] : message.mediaUrls?.[0],
     MediaTypes: message.mediaTypes,
@@ -523,7 +524,7 @@ async function processMessage(
   const { onModelSelected, ...prefixOptions } = createReplyPrefixOptions({
     cfg: config,
     agentId: route.agentId,
-    channel: "zalo-personal",
+    channel: "opclaw-zalo",
     accountId: account.accountId,
   });
 
@@ -572,7 +573,7 @@ async function processMessage(
       } catch (err) {
         logAckFailure({
           log: (msg) => logVerbose(core, runtime, msg),
-          channel: "zalo-personal",
+          channel: "opclaw-zalo",
           target: chatId,
           error: err,
         });
@@ -591,7 +592,7 @@ async function processMessage(
     onStartError: (err) => {
       logTypingFailure({
         log: (msg) => logVerbose(core, runtime, msg),
-        channel: "zalo-personal",
+        channel: "opclaw-zalo",
         target: chatId,
         action: "start",
         error: err,
@@ -617,7 +618,7 @@ async function processMessage(
             statusSink,
             tableMode: core.channel.text.resolveMarkdownTableMode({
               cfg: config,
-              channel: "zalo-personal",
+              channel: "opclaw-zalo",
               accountId: account.accountId,
             }),
           });
@@ -651,7 +652,7 @@ async function processMessage(
         onError: (err) => {
           logAckFailure({
             log: (msg) => logVerbose(core, runtime, msg),
-            channel: "zalo-personal",
+            channel: "opclaw-zalo",
             target: chatId,
             error: err,
           });
@@ -735,7 +736,7 @@ async function deliverZaloPersonalReply(params: {
   }
 
   if (text) {
-    const chunkMode = core.channel.text.resolveChunkMode(config, "zalo-personal", accountId);
+    const chunkMode = core.channel.text.resolveChunkMode(config, "opclaw-zalo", accountId);
     const chunks = core.channel.text.chunkMarkdownTextWithMode(text, ZALOJS_TEXT_LIMIT, chunkMode);
     logVerbose(core, runtime, `Sending ${chunks.length} text chunk(s) to ${chatId}`);
     for (const chunk of chunks) {
@@ -792,9 +793,9 @@ export async function monitorZaloPersonalProvider(
         }
         const allowFrom = mergeAllowlist({ existing: account.config.allowFrom, additions });
         account = { ...account, config: { ...account.config, allowFrom } };
-        summarizeMapping("zalo-personal users", mapping, unresolved, runtime);
+        summarizeMapping("opclaw-zalo users", mapping, unresolved, runtime);
       } catch (err) {
-        runtime.log?.(`zalo-personal user resolve failed. ${String(err)}`);
+        runtime.log?.(`opclaw-zalo user resolve failed. ${String(err)}`);
       }
     }
 
@@ -828,9 +829,9 @@ export async function monitorZaloPersonalProvider(
         }
         const denyFrom = mergeAllowlist({ existing: account.config.denyFrom, additions });
         account = { ...account, config: { ...account.config, denyFrom } };
-        summarizeMapping("zalo-personal blocked users", mapping, unresolved, runtime);
+        summarizeMapping("opclaw-zalo blocked users", mapping, unresolved, runtime);
       } catch (err) {
-        runtime.log?.(`zalo-personal denyFrom resolve failed. ${String(err)}`);
+        runtime.log?.(`opclaw-zalo denyFrom resolve failed. ${String(err)}`);
       }
     }
 
@@ -908,18 +909,18 @@ export async function monitorZaloPersonalProvider(
           const resolvedDenyUsers = mergeAllowlist({ existing: groupConfig.denyUsers, additions: userAdditions });
           nextGroups[groupKey] = { ...groupConfig, denyUsers: resolvedDenyUsers };
           if (userMapping.length > 0 || userUnresolved.length > 0) {
-            summarizeMapping(`zalo-personal group:${groupKey} blocked users`, userMapping, userUnresolved, runtime);
+            summarizeMapping(`opclaw-zalo group:${groupKey} blocked users`, userMapping, userUnresolved, runtime);
           }
         }
 
         account = { ...account, config: { ...account.config, groups: nextGroups } };
-        summarizeMapping("zalo-personal groups", mapping, unresolved, runtime);
+        summarizeMapping("opclaw-zalo groups", mapping, unresolved, runtime);
       } catch (err) {
-        runtime.log?.(`zalo-personal group resolve failed. ${String(err)}`);
+        runtime.log?.(`opclaw-zalo group resolve failed. ${String(err)}`);
       }
     }
   } catch (err) {
-    runtime.log?.(`zalo-personal resolve failed. ${String(err)}`);
+    runtime.log?.(`opclaw-zalo resolve failed. ${String(err)}`);
   }
 
   const stop = () => {
@@ -971,6 +972,34 @@ export async function monitorZaloPersonalProvider(
         } catch (err) {
           runtime.error(`[${account.accountId}] friend event error: ${String(err)}`);
         }
+      });
+
+      // Reaction events from other users
+      api.listener.on("reaction", (reaction: Reaction) => {
+        if (reaction.isSelf) return;
+        const icon = reaction.data.content?.rIcon || "";
+        const fromUid = reaction.data.uidFrom;
+        const threadId = reaction.threadId;
+        const isGroup = reaction.isGroup;
+        logVerbose(core, runtime, `[${account.accountId}] reaction: ${icon} from ${fromUid} in ${isGroup ? "group" : "dm"} ${threadId}`);
+      });
+
+      // Typing events from other users
+      api.listener.on("typing", (typing: Typing) => {
+        if (typing.isSelf) return;
+        const threadId = typing.threadId;
+        const isGroup = typing.type === ThreadType.Group;
+        logVerbose(core, runtime, `[${account.accountId}] typing in ${isGroup ? "group" : "dm"} ${threadId}`);
+      });
+
+      // Read/seen receipts
+      api.listener.on("seen_messages", (seenObjects: Array<{ threadId: string; uid?: string; msgId?: string }>) => {
+        for (const seen of seenObjects) {
+          if (seen.threadId && seen.uid) {
+            recordReadReceipt(seen.threadId, seen.uid);
+          }
+        }
+        logVerbose(core, runtime, `[${account.accountId}] seen_messages: ${seenObjects.length} entries`);
       });
 
       api.listener.on("error", (err: unknown) => {

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, unlinkSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-const CREDENTIALS_PATH = join(homedir(), ".openclaw", "zalo-personal-credentials.json");
+const CREDENTIALS_PATH = join(homedir(), ".openclaw", "opclaw-zalo-credentials.json");
 
 export type ZaloPersonalCredentials = {
   imei: string;

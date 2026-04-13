@@ -5,7 +5,7 @@ import { setZaloPersonalRuntime } from "./src/runtime.js";
 import { ZaloPersonalToolSchema, executeZaloPersonalTool } from "./src/tool.js";
 
 const plugin = {
-  id: "zalo-personal",
+  id: "opclaw-zalo",
   name: "Zalo Personal",
   description: "Zalo personal account messaging via zca-js library",
   configSchema: emptyPluginConfigSchema(),
@@ -16,7 +16,7 @@ const plugin = {
 
     // Register agent tool
     api.registerTool({
-      name: "zalo-personal",
+      name: "opclaw-zalo",
       label: "Zalo Personal",
       description:
         "Complete Zalo personal account management via zca-js (130 actions). " +

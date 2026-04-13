@@ -37,13 +37,13 @@ import * as fs from "fs";
 import * as readline from "readline";
 
 const meta = {
-  id: "zalo-personal",
+  id: "opclaw-zalo",
   label: "Zalo Personal",
   selectionLabel: "Zalo Personal Account",
-  docsPath: "/channels/zalo-personal",
-  docsLabel: "zalo-personal",
+  docsPath: "/channels/opclaw-zalo",
+  docsLabel: "opclaw-zalo",
   blurb: "Zalo personal account via zca-js library (no CLI needed).",
-  aliases: ["zp"],
+  aliases: ["oz"],
   order: 86,
   quickstartAllowFrom: true,
 };
@@ -111,7 +111,7 @@ function resolveZaloPersonalGroupToolPolicy(
 }
 
 export const zaloPersonalDock: ChannelDock = {
-  id: "zalo-personal",
+  id: "opclaw-zalo",
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
@@ -127,7 +127,7 @@ export const zaloPersonalDock: ChannelDock = {
       allowFrom
         .map((entry) => String(entry).trim())
         .filter(Boolean)
-        .map((entry) => entry.replace(/^(zalo-personal|zp):/i, ""))
+        .map((entry) => entry.replace(/^(opclaw-zalo|oz):/i, ""))
         .map((entry) => entry.toLowerCase()),
   },
   groups: {
@@ -140,7 +140,7 @@ export const zaloPersonalDock: ChannelDock = {
 };
 
 export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
-  id: "zalo-personal",
+  id: "opclaw-zalo",
   meta,
   onboarding: zaloPersonalOnboardingAdapter,
   capabilities: {
@@ -152,7 +152,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     nativeCommands: false,
     blockStreaming: true,
   },
-  reload: { configPrefixes: ["channels['zalo-personal']"] },
+  reload: { configPrefixes: ["channels['opclaw-zalo']"] },
   configSchema: ZaloPersonalChannelConfigSchema,
   config: {
     listAccountIds: (cfg) => listZaloPersonalAccountIds(cfg),
@@ -161,7 +161,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     setAccountEnabled: ({ cfg, accountId, enabled }) =>
       setAccountEnabledInConfigSection({
         cfg,
-        sectionKey: "zalo-personal",
+        sectionKey: "opclaw-zalo",
         accountId,
         enabled,
         allowTopLevel: true,
@@ -169,7 +169,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     deleteAccount: ({ cfg, accountId }) =>
       deleteAccountFromConfigSection({
         cfg,
-        sectionKey: "zalo-personal",
+        sectionKey: "opclaw-zalo",
         accountId,
         clearBaseFields: [
           "name",
@@ -195,23 +195,23 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       allowFrom
         .map((entry) => String(entry).trim())
         .filter(Boolean)
-        .map((entry) => entry.replace(/^(zalo-personal|zp):/i, ""))
+        .map((entry) => entry.replace(/^(opclaw-zalo|oz):/i, ""))
         .map((entry) => entry.toLowerCase()),
   },
   security: {
     resolveDmPolicy: ({ cfg, accountId, account }) => {
       const resolvedAccountId = accountId ?? account.accountId ?? DEFAULT_ACCOUNT_ID;
-      const useAccountPath = Boolean(cfg.channels?.['zalo-personal']?.accounts?.[resolvedAccountId]);
+      const useAccountPath = Boolean(cfg.channels?.['opclaw-zalo']?.accounts?.[resolvedAccountId]);
       const basePath = useAccountPath
-        ? `channels['zalo-personal'].accounts.${resolvedAccountId}.`
-        : "channels['zalo-personal'].";
+        ? `channels['opclaw-zalo'].accounts.${resolvedAccountId}.`
+        : "channels['opclaw-zalo'].";
       return {
         policy: account.config.dmPolicy ?? "open",
         allowFrom: account.config.allowFrom ?? ["*"],
         policyPath: `${basePath}dmPolicy`,
         allowFromPath: basePath,
-        approveHint: formatPairingApproveHint("zalo-personal"),
-        normalizeEntry: (raw) => raw.replace(/^(zalo-personal|zp):/i, ""),
+        approveHint: formatPairingApproveHint("opclaw-zalo"),
+        normalizeEntry: (raw) => raw.replace(/^(opclaw-zalo|oz):/i, ""),
       };
     },
   },
@@ -230,25 +230,25 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
   setup: {
     resolveAccountId: ({ accountId }) => normalizeAccountId(accountId),
     applyAccountName: ({ cfg, accountId, name }) =>
-      applyAccountNameToChannelSection({ cfg, channelKey: "zalo-personal", accountId, name }),
+      applyAccountNameToChannelSection({ cfg, channelKey: "opclaw-zalo", accountId, name }),
     validateInput: () => null,
     applyAccountConfig: ({ cfg, accountId, input }) => {
       const namedConfig = applyAccountNameToChannelSection({
         cfg,
-        channelKey: "zalo-personal",
+        channelKey: "opclaw-zalo",
         accountId,
         name: input.name,
       });
       const next =
         accountId !== DEFAULT_ACCOUNT_ID
-          ? migrateBaseNameToDefaultAccount({ cfg: namedConfig, channelKey: "zalo-personal" })
+          ? migrateBaseNameToDefaultAccount({ cfg: namedConfig, channelKey: "opclaw-zalo" })
           : namedConfig;
       if (accountId === DEFAULT_ACCOUNT_ID) {
         return {
           ...next,
           channels: {
             ...next.channels,
-            'zalo-personal': { ...next.channels?.['zalo-personal'], enabled: true },
+            'opclaw-zalo': { ...next.channels?.['opclaw-zalo'], enabled: true },
           },
         } as OpenClawConfig;
       }
@@ -256,13 +256,13 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
         ...next,
         channels: {
           ...next.channels,
-          'zalo-personal': {
-            ...next.channels?.['zalo-personal'],
+          'opclaw-zalo': {
+            ...next.channels?.['opclaw-zalo'],
             enabled: true,
             accounts: {
-              ...next.channels?.['zalo-personal']?.accounts,
+              ...next.channels?.['opclaw-zalo']?.accounts,
               [accountId]: {
-                ...next.channels?.['zalo-personal']?.accounts?.[accountId],
+                ...next.channels?.['opclaw-zalo']?.accounts?.[accountId],
                 enabled: true,
               },
             },
@@ -275,7 +275,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     normalizeTarget: (raw) => {
       const trimmed = raw?.trim();
       if (!trimmed) return undefined;
-      return trimmed.replace(/^(zalo-personal|zp):/i, "");
+      return trimmed.replace(/^(opclaw-zalo|oz):/i, "");
     },
     targetResolver: {
       looksLikeId: (raw) => {
@@ -440,7 +440,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
             });
           }
         } catch (err) {
-          runtime.error?.(`zalo-personal resolve failed: ${String(err)}`);
+          runtime.error?.(`opclaw-zalo resolve failed: ${String(err)}`);
           results.push({ input, resolved: false, note: "lookup failed" });
         }
       }
@@ -449,7 +449,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
   },
   pairing: {
     idLabel: "zaloPersonalUserId",
-    normalizeAllowEntry: (entry) => entry.replace(/^(zalo-personal|zp):/i, ""),
+    normalizeAllowEntry: (entry) => entry.replace(/^(opclaw-zalo|oz):/i, ""),
     notifyApproval: async ({ cfg, id }) => {
       const authenticated = await checkZaloPersonalAuthenticated();
       if (!authenticated) throw new Error("ZaloPersonal not authenticated");
@@ -526,7 +526,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       const account = resolveZaloPersonalAccountSync({ cfg, accountId });
       const result = await sendMessageZaloPersonal(to, text);
       return {
-        channel: "zalo-personal",
+        channel: "opclaw-zalo",
         ok: result.ok,
         messageId: result.messageId ?? "",
         error: result.error ? new Error(result.error) : undefined,
@@ -544,7 +544,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       }
       const result = await sendMessageZaloPersonal(to, text, options);
       return {
-        channel: "zalo-personal",
+        channel: "opclaw-zalo",
         ok: result.ok,
         messageId: result.messageId ?? "",
         error: result.error ? new Error(result.error) : undefined,
@@ -598,7 +598,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
         if (userInfo?.displayName) userLabel = ` (${userInfo.displayName})`;
         ctx.setStatus({ accountId: account.accountId, profile: userInfo });
       } catch {}
-      ctx.log?.info(`[${account.accountId}] starting zalo-personal provider${userLabel}`);
+      ctx.log?.info(`[${account.accountId}] starting opclaw-zalo provider${userLabel}`);
       const { monitorZaloPersonalProvider } = await import("./monitor.js");
       return monitorZaloPersonalProvider({
         account,

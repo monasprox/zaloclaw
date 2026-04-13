@@ -1,6 +1,368 @@
 {
-  "id": "zalo-personal",
-  "channels": ["zalo-personal"],
+  "id": "opclaw-zalo",
+  "channels": [
+    "opclaw-zalo"
+  ],
+  "channelConfigs": {
+    "opclaw-zalo": {
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "markdown": {
+            "type": "object",
+            "properties": {
+              "tables": {
+                "type": "string",
+                "enum": [
+                  "off",
+                  "bullets",
+                  "code",
+                  "block"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "dmPolicy": {
+            "type": "string",
+            "enum": [
+              "pairing",
+              "allowlist",
+              "open",
+              "disabled"
+            ]
+          },
+          "allowFrom": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "denyFrom": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "groupPolicy": {
+            "type": "string",
+            "enum": [
+              "open",
+              "disabled",
+              "allowlist"
+            ]
+          },
+          "groups": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "allow": {
+                  "type": "boolean"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "requireMention": {
+                  "type": "boolean"
+                },
+                "allowUsers": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "denyUsers": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "tools": {
+                  "type": "object",
+                  "properties": {
+                    "allow": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "alsoAllow": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "deny": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "messagePrefix": {
+            "type": "string"
+          },
+          "responsePrefix": {
+            "type": "string"
+          },
+          "accounts": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "markdown": {
+                  "type": "object",
+                  "properties": {
+                    "tables": {
+                      "type": "string",
+                      "enum": [
+                        "off",
+                        "bullets",
+                        "code",
+                        "block"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "dmPolicy": {
+                  "type": "string",
+                  "enum": [
+                    "pairing",
+                    "allowlist",
+                    "open",
+                    "disabled"
+                  ]
+                },
+                "allowFrom": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "denyFrom": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "groupPolicy": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "disabled",
+                    "allowlist"
+                  ]
+                },
+                "groups": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "allow": {
+                        "type": "boolean"
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "requireMention": {
+                        "type": "boolean"
+                      },
+                      "allowUsers": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "denyUsers": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "tools": {
+                        "type": "object",
+                        "properties": {
+                          "allow": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "alsoAllow": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "deny": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "messagePrefix": {
+                  "type": "string"
+                },
+                "responsePrefix": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "defaultAccount": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "uiHints": {
+        "": {
+          "label": "Zalo Personal",
+          "help": "Channel status and configuration."
+        },
+        "dmPolicy": {
+          "label": "DM Policy",
+          "help": "Controls who can message the bot in DMs. \"pairing\" requires a code exchange, \"allowlist\" only allows entries in allowFrom, \"open\" accepts all, \"disabled\" blocks DMs."
+        },
+        "groupPolicy": {
+          "label": "Group Policy",
+          "help": "Controls which groups the bot responds in. \"open\" = all groups, \"allowlist\" = only groups listed under groups, \"disabled\" = ignore all groups."
+        },
+        "allowFrom": {
+          "label": "Allow From",
+          "help": "Users allowed to interact in DMs. Use Zalo user IDs or display names. Wildcard: *"
+        },
+        "denyFrom": {
+          "label": "Deny From",
+          "help": "Users denied from interacting. Checked before allowFrom."
+        },
+        "markdown.tables": {
+          "label": "Markdown Tables",
+          "help": "How to render markdown tables: \"code\" = code block, \"bullets\" = bullet list, \"off\" = strip."
+        },
+        "messagePrefix": {
+          "label": "Message Prefix",
+          "help": "Text prepended to every outbound message (e.g. bot name tag)."
+        },
+        "responsePrefix": {
+          "label": "Response Prefix",
+          "help": "Text prepended to agent responses."
+        },
+        "groups": {
+          "label": "Groups",
+          "help": "Per-group overrides. Key = group ID, name, or * for default."
+        },
+        "groups.*.requireMention": {
+          "label": "Require @Mention",
+          "help": "If true, bot only responds when @mentioned in this group."
+        },
+        "groups.*.allowUsers": {
+          "label": "Group Allow Users",
+          "help": "Only these users can trigger the bot in this group."
+        },
+        "groups.*.denyUsers": {
+          "label": "Group Deny Users",
+          "help": "Block specific users in this group."
+        },
+        "groups.*.tools": {
+          "label": "Group Tool Policy",
+          "help": "Override tool execution permissions for this group."
+        }
+      }
+    }
+  },
   "configSchema": {
     "type": "object",
     "properties": {}
