@@ -15,10 +15,10 @@ import {
 } from "openclaw/plugin-sdk/setup";
 import * as fs from "fs";
 import {
-  listZaloPersonalAccountIds,
-  resolveDefaultZaloPersonalAccountId,
-  resolveZaloPersonalAccountSync,
-  checkZaloPersonalAuthenticated,
+  listOpclawZaloAccountIds,
+  resolveDefaultOpclawZaloAccountId,
+  resolveOpclawZaloAccountSync,
+  checkOpclawZaloAuthenticated,
 } from "./accounts.js";
 import { hasStoredCredentials, loginWithQR } from "./zalo-client.js";
 import { LoginQRCallbackEventType } from "zca-js";
@@ -26,7 +26,7 @@ import { displayQRFromPNG } from "./qr-display.js";
 
 const channel = "opclaw-zalo" as const;
 
-function setZaloPersonalDmPolicy(
+function setOpclawZaloDmPolicy(
   cfg: OpenClawConfig,
   dmPolicy: "pairing" | "allowlist" | "open" | "disabled",
 ): OpenClawConfig {
@@ -45,10 +45,10 @@ function setZaloPersonalDmPolicy(
   } as OpenClawConfig;
 }
 
-async function noteZaloPersonalHelp(prompter: WizardPrompter): Promise<void> {
+async function noteOpclawZaloHelp(prompter: WizardPrompter): Promise<void> {
   await prompter.note(
     [
-      "Zalo Personal Account login via QR code.",
+      "OpenClaw Zalo Account login via QR code.",
       "",
       "Prerequisites:",
       "1) zca-js library (bundled with plugin)",
@@ -60,13 +60,13 @@ async function noteZaloPersonalHelp(prompter: WizardPrompter): Promise<void> {
   );
 }
 
-async function promptZaloPersonalAllowFrom(params: {
+async function promptOpclawZaloAllowFrom(params: {
   cfg: OpenClawConfig;
   prompter: WizardPrompter;
   accountId: string;
 }): Promise<OpenClawConfig> {
   const { cfg, prompter, accountId } = params;
-  const resolved = resolveZaloPersonalAccountSync({ cfg, accountId });
+  const resolved = resolveOpclawZaloAccountSync({ cfg, accountId });
   const existingAllowFrom = resolved.config.allowFrom ?? [];
   const parseInput = (raw: string) =>
     raw.split(/[\n,;]+/g).map((entry) => entry.trim()).filter(Boolean);
@@ -91,7 +91,7 @@ async function promptZaloPersonalAllowFrom(params: {
 
   while (true) {
     const entry = await prompter.text({
-      message: "ZaloPersonal allowFrom (username or user id)",
+      message: "OpclawZalo allowFrom (username or user id)",
       placeholder: "Alice, 123456789",
       initialValue: existingAllowFrom[0] ? String(existingAllowFrom[0]) : undefined,
       validate: (value) => (String(value ?? "").trim() ? undefined : "Required"),
@@ -147,7 +147,7 @@ async function promptZaloPersonalAllowFrom(params: {
   }
 }
 
-function setZaloPersonalGroupPolicy(
+function setOpclawZaloGroupPolicy(
   cfg: OpenClawConfig,
   accountId: string,
   groupPolicy: "open" | "allowlist" | "disabled",
@@ -181,7 +181,7 @@ function setZaloPersonalGroupPolicy(
   } as OpenClawConfig;
 }
 
-function setZaloPersonalGroupAllowlist(
+function setOpclawZaloGroupAllowlist(
   cfg: OpenClawConfig,
   accountId: string,
   groupKeys: string[],
@@ -216,7 +216,7 @@ function setZaloPersonalGroupAllowlist(
   } as OpenClawConfig;
 }
 
-async function resolveZaloPersonalGroups(params: {
+async function resolveOpclawZaloGroups(params: {
   cfg: OpenClawConfig;
   accountId: string;
   entries: string[];
@@ -268,13 +268,13 @@ const dmPolicy: ChannelOnboardingDmPolicy = {
   policyKey: "channels['opclaw-zalo'].dmPolicy",
   allowFromKey: "channels['opclaw-zalo'].allowFrom",
   getCurrent: (cfg) => (cfg.channels?.['opclaw-zalo']?.dmPolicy ?? "open") as "open",
-  setPolicy: (cfg, policy) => setZaloPersonalDmPolicy(cfg, policy),
+  setPolicy: (cfg, policy) => setOpclawZaloDmPolicy(cfg, policy),
   promptAllowFrom: async ({ cfg, prompter, accountId }) => {
     const id =
       accountId && normalizeAccountId(accountId)
         ? (normalizeAccountId(accountId) ?? DEFAULT_ACCOUNT_ID)
-        : resolveDefaultZaloPersonalAccountId(cfg);
-    return promptZaloPersonalAllowFrom({ cfg, prompter, accountId: id });
+        : resolveDefaultOpclawZaloAccountId(cfg);
+    return promptOpclawZaloAllowFrom({ cfg, prompter, accountId: id });
   },
 };
 
@@ -312,7 +312,7 @@ async function performQrLogin(prompter: WizardPrompter): Promise<void> {
   }
 }
 
-export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
+export const opclawZaloOnboardingAdapter: ChannelOnboardingAdapter = {
   channel,
   dmPolicy,
   getStatus: async ({ cfg }) => {
@@ -332,17 +332,17 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
     shouldPromptAccountIds,
     forceAllowFrom,
   }) => {
-    const zaloPersonalOverride = accountOverrides['opclaw-zalo']?.trim();
-    const defaultAccountId = resolveDefaultZaloPersonalAccountId(cfg);
-    let accountId = zaloPersonalOverride ? normalizeAccountId(zaloPersonalOverride) : defaultAccountId;
+    const opclawZaloOverride = accountOverrides['opclaw-zalo']?.trim();
+    const defaultAccountId = resolveDefaultOpclawZaloAccountId(cfg);
+    let accountId = opclawZaloOverride ? normalizeAccountId(opclawZaloOverride) : defaultAccountId;
 
-    if (shouldPromptAccountIds && !zaloPersonalOverride) {
+    if (shouldPromptAccountIds && !opclawZaloOverride) {
       accountId = await promptAccountId({
         cfg,
         prompter,
         label: "Zalo JS",
         currentId: accountId,
-        listAccountIds: listZaloPersonalAccountIds,
+        listAccountIds: listOpclawZaloAccountIds,
         defaultAccountId,
       });
     }
@@ -351,7 +351,7 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
     const alreadyAuthenticated = hasStoredCredentials();
 
     if (!alreadyAuthenticated) {
-      await noteZaloPersonalHelp(prompter);
+      await noteOpclawZaloHelp(prompter);
       const wantsLogin = await prompter.confirm({
         message: "Login via QR code now?",
         initialValue: true,
@@ -419,10 +419,10 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
     }
 
     if (forceAllowFrom) {
-      next = await promptZaloPersonalAllowFrom({ cfg: next, prompter, accountId });
+      next = await promptOpclawZaloAllowFrom({ cfg: next, prompter, accountId });
     }
 
-    const account = resolveZaloPersonalAccountSync({ cfg: next, accountId });
+    const account = resolveOpclawZaloAccountSync({ cfg: next, accountId });
     const accessConfig = await promptChannelAccessConfig({
       prompter,
       label: "Zalo groups",
@@ -433,12 +433,12 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
     });
     if (accessConfig) {
       if (accessConfig.policy !== "allowlist") {
-        next = setZaloPersonalGroupPolicy(next, accountId, accessConfig.policy);
+        next = setOpclawZaloGroupPolicy(next, accountId, accessConfig.policy);
       } else {
         let keys = accessConfig.entries;
         if (accessConfig.entries.length > 0) {
           try {
-            const resolved = await resolveZaloPersonalGroups({ cfg: next, accountId, entries: accessConfig.entries });
+            const resolved = await resolveOpclawZaloGroups({ cfg: next, accountId, entries: accessConfig.entries });
             const resolvedIds = resolved.filter((e) => e.resolved && e.id).map((e) => e.id as string);
             const unresolved = resolved.filter((e) => !e.resolved).map((e) => e.input);
             keys = [...resolvedIds, ...unresolved.map((e) => e.trim()).filter(Boolean)];
@@ -455,8 +455,8 @@ export const zaloPersonalOnboardingAdapter: ChannelOnboardingAdapter = {
             await prompter.note(`Group lookup failed; keeping entries as typed. ${String(err)}`, "Zalo groups");
           }
         }
-        next = setZaloPersonalGroupPolicy(next, accountId, "allowlist");
-        next = setZaloPersonalGroupAllowlist(next, accountId, keys);
+        next = setOpclawZaloGroupPolicy(next, accountId, "allowlist");
+        next = setOpclawZaloGroupAllowlist(next, accountId, keys);
       }
     }
 

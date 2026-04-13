@@ -1,7 +1,7 @@
 {
   "name": "opclaw-zalo",
   "version": "2.0.0",
-  "description": "OpenClaw Zalo Personal channel plugin via zca-js",
+  "description": "OpenClaw Zalo channel plugin via zca-js",
   "type": "module",
   "main": "index.ts",
   "openclaw": {

@@ -1,5 +1,5 @@
 /**
- * Zalo Personal agent tool — written from scratch against zca-js v2.1.2 API.
+ * OpenClaw Zalo agent tool — written from scratch against zca-js v2.1.2 API.
  *
  * Organized by domain: messaging → contacts → groups → media → reactions →
  * polls → reminders → conversation → settings → profile → bot-config.
@@ -268,7 +268,7 @@ function stringEnum<T extends readonly string[]>(
   });
 }
 
-export const ZaloPersonalToolSchema = Type.Object(
+export const OpclawZaloToolSchema = Type.Object(
   {
     action: stringEnum(ACTIONS, {
       description: `Action to perform. ${ACTIONS.length} actions available: ${ACTIONS.join(", ")}`,
@@ -406,7 +406,7 @@ type Params = {
 
 // ─── Execute ─────────────────────────────────────────────────────────────────
 
-export async function executeZaloPersonalTool(
+export async function executeOpclawZaloTool(
   _callId: string,
   p: Params,
   _signal?: AbortSignal,

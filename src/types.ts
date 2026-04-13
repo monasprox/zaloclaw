@@ -1,4 +1,4 @@
-export type ZaloPersonalAccountConfig = {
+export type OpclawZaloAccountConfig = {
   enabled?: boolean;
   name?: string;
   dmPolicy?: "pairing" | "allowlist" | "open" | "disabled";
@@ -20,7 +20,7 @@ export type ZaloPersonalAccountConfig = {
   responsePrefix?: string;
 };
 
-export type ZaloPersonalConfig = {
+export type OpclawZaloConfig = {
   enabled?: boolean;
   name?: string;
   defaultAccount?: string;
@@ -41,36 +41,36 @@ export type ZaloPersonalConfig = {
   >;
   messagePrefix?: string;
   responsePrefix?: string;
-  accounts?: Record<string, ZaloPersonalAccountConfig>;
+  accounts?: Record<string, OpclawZaloAccountConfig>;
 };
 
-export type ResolvedZaloPersonalAccount = {
+export type ResolvedOpclawZaloAccount = {
   accountId: string;
   name?: string;
   enabled: boolean;
   authenticated: boolean;
-  config: ZaloPersonalAccountConfig;
+  config: OpclawZaloAccountConfig;
 };
 
-export type ZaloPersonalUserInfo = {
+export type OpclawZaloUserInfo = {
   userId: string;
   displayName: string;
   avatar?: string;
 };
 
-export type ZaloPersonalFriend = {
+export type OpclawZaloFriend = {
   userId: string;
   displayName: string;
   avatar?: string;
 };
 
-export type ZaloPersonalGroup = {
+export type OpclawZaloGroup = {
   groupId: string;
   name: string;
   memberCount?: number;
 };
 
-export type ZaloPersonalMessage = {
+export type OpclawZaloMessage = {
   threadId: string;
   msgId?: string;
   cliMsgId?: string;

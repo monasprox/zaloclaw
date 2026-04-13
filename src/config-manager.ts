@@ -1,13 +1,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { ZaloPersonalConfig } from "./types.js";
+import type { OpclawZaloConfig } from "./types.js";
 
 const DEFAULT_CONFIG_PATH = join(homedir(), ".openclaw", "openclaw.json");
 
 export type OpenClawConfig = {
   channels?: {
-    "opclaw-zalo"?: ZaloPersonalConfig;
+    "opclaw-zalo"?: OpclawZaloConfig;
     [key: string]: any;
   };
   [key: string]: any;
@@ -31,20 +31,20 @@ export function writeOpenClawConfig(config: OpenClawConfig, configPath = DEFAULT
   }
 }
 
-export function getZaloPersonalConfig(config: OpenClawConfig): ZaloPersonalConfig {
+export function getOpclawZaloConfig(config: OpenClawConfig): OpclawZaloConfig {
   return config.channels?.["opclaw-zalo"] ?? {};
 }
 
-export function updateZaloPersonalConfig(
+export function updateOpclawZaloConfig(
   config: OpenClawConfig,
-  updates: Partial<ZaloPersonalConfig>,
+  updates: Partial<OpclawZaloConfig>,
 ): OpenClawConfig {
   return {
     ...config,
     channels: {
       ...config.channels,
       "opclaw-zalo": {
-        ...getZaloPersonalConfig(config),
+        ...getOpclawZaloConfig(config),
         ...updates,
       },
     },
@@ -63,15 +63,15 @@ function removeFromArray<T>(arr: T[] | undefined, entry: T): T[] {
 }
 
 export function addToDenyFrom(config: OpenClawConfig, userId: string): OpenClawConfig {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const denyFrom = addToArray(zpConfig.denyFrom, userId);
-  return updateZaloPersonalConfig(config, { denyFrom });
+  return updateOpclawZaloConfig(config, { denyFrom });
 }
 
 export function removeFromDenyFrom(config: OpenClawConfig, userId: string): OpenClawConfig {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const denyFrom = removeFromArray(zpConfig.denyFrom, userId);
-  return updateZaloPersonalConfig(config, { denyFrom });
+  return updateOpclawZaloConfig(config, { denyFrom });
 }
 
 export function addToGroupDenyUsers(
@@ -79,11 +79,11 @@ export function addToGroupDenyUsers(
   groupId: string,
   userId: string,
 ): OpenClawConfig {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const groups = zpConfig.groups ?? {};
   const groupConfig = groups[groupId] ?? {};
   const denyUsers = addToArray(groupConfig.denyUsers, userId);
-  return updateZaloPersonalConfig(config, {
+  return updateOpclawZaloConfig(config, {
     groups: { ...groups, [groupId]: { ...groupConfig, denyUsers } },
   });
 }
@@ -93,22 +93,22 @@ export function removeFromGroupDenyUsers(
   groupId: string,
   userId: string,
 ): OpenClawConfig {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const groups = zpConfig.groups ?? {};
   const groupConfig = groups[groupId];
   if (!groupConfig) return config;
   const denyUsers = removeFromArray(groupConfig.denyUsers, userId);
-  return updateZaloPersonalConfig(config, {
+  return updateOpclawZaloConfig(config, {
     groups: { ...groups, [groupId]: { ...groupConfig, denyUsers } },
   });
 }
 
 export function listBlockedUsers(config: OpenClawConfig): Array<string | number> {
-  return getZaloPersonalConfig(config).denyFrom ?? [];
+  return getOpclawZaloConfig(config).denyFrom ?? [];
 }
 
 export function listAllowedUsers(config: OpenClawConfig): Array<string | number> {
-  return getZaloPersonalConfig(config).allowFrom ?? [];
+  return getOpclawZaloConfig(config).allowFrom ?? [];
 }
 
 export function addToGroupAllowUsers(
@@ -116,11 +116,11 @@ export function addToGroupAllowUsers(
   groupId: string,
   userId: string,
 ): OpenClawConfig {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const groups = zpConfig.groups ?? {};
   const groupConfig = groups[groupId] ?? {};
   const allowUsers = addToArray(groupConfig.allowUsers, userId);
-  return updateZaloPersonalConfig(config, {
+  return updateOpclawZaloConfig(config, {
     groups: { ...groups, [groupId]: { ...groupConfig, allowUsers } },
   });
 }
@@ -130,22 +130,22 @@ export function removeFromGroupAllowUsers(
   groupId: string,
   userId: string,
 ): OpenClawConfig {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const groups = zpConfig.groups ?? {};
   const groupConfig = groups[groupId];
   if (!groupConfig) return config;
   const allowUsers = removeFromArray(groupConfig.allowUsers, userId);
-  return updateZaloPersonalConfig(config, {
+  return updateOpclawZaloConfig(config, {
     groups: { ...groups, [groupId]: { ...groupConfig, allowUsers } },
   });
 }
 
 export function listAllowedUsersInGroup(config: OpenClawConfig, groupId: string): Array<string | number> {
-  return getZaloPersonalConfig(config).groups?.[groupId]?.allowUsers ?? [];
+  return getOpclawZaloConfig(config).groups?.[groupId]?.allowUsers ?? [];
 }
 
 export function listBlockedUsersInGroup(config: OpenClawConfig, groupId: string): Array<string | number> {
-  return getZaloPersonalConfig(config).groups?.[groupId]?.denyUsers ?? [];
+  return getOpclawZaloConfig(config).groups?.[groupId]?.denyUsers ?? [];
 }
 
 export function setGroupRequireMention(
@@ -153,10 +153,10 @@ export function setGroupRequireMention(
   groupId: string,
   requireMention: boolean,
 ): OpenClawConfig {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const groups = zpConfig.groups ?? {};
   const groupConfig = groups[groupId] ?? {};
-  return updateZaloPersonalConfig(config, {
+  return updateOpclawZaloConfig(config, {
     groups: { ...groups, [groupId]: { ...groupConfig, requireMention } },
   });
 }
@@ -165,7 +165,7 @@ export function getGroupRequireMention(
   config: OpenClawConfig,
   groupId: string,
 ): boolean | undefined {
-  const zpConfig = getZaloPersonalConfig(config);
+  const zpConfig = getOpclawZaloConfig(config);
   const groups = zpConfig.groups ?? {};
   const direct = groups[groupId];
   if (direct && typeof direct.requireMention === "boolean") return direct.requireMention;

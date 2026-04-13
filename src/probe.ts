@@ -7,7 +7,7 @@ export interface ProbeResult {
   error?: string;
 }
 
-export async function probeZaloPersonal(): Promise<ProbeResult> {
+export async function probeOpclawZalo(): Promise<ProbeResult> {
   try {
     const api = await getApi();
     const uid = getCurrentUid();

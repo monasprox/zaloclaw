@@ -309,7 +309,7 @@
       },
       "uiHints": {
         "": {
-          "label": "Zalo Personal",
+          "label": "OpenClaw Zalo",
           "help": "Channel status and configuration."
         },
         "dmPolicy": {

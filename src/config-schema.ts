@@ -1,5 +1,5 @@
 /**
- * Zalo Personal channel config schema — built on OpenClaw SDK primitives (Zod 4).
+ * OpenClaw Zalo channel config schema — built on OpenClaw SDK primitives (Zod 4).
  *
  * Mirrors the Telegram channel's pattern: per-account config with DM/group
  * policies, access lists, markdown rendering, and per-group tool policies.
@@ -36,7 +36,7 @@ const ZaloGroupConfigSchema = z.object({
 
 // --- Per-account config ---
 
-const ZaloPersonalAccountSchema = z.object({
+const OpclawZaloAccountSchema = z.object({
   /** Human-readable label for this account. */
   name: z.string().optional(),
   /** Enable/disable this account. */
@@ -61,19 +61,19 @@ const ZaloPersonalAccountSchema = z.object({
 
 // --- Full channel schema (account + multi-account) ---
 
-/** The top-level Zalo Personal config Zod schema (Zod 4, has toJSONSchema). */
-export const ZaloPersonalConfigSchema =
-  buildCatchallMultiAccountChannelSchema(ZaloPersonalAccountSchema);
+/** The top-level OpenClaw Zalo config Zod schema (Zod 4, has toJSONSchema). */
+export const OpclawZaloConfigSchema =
+  buildCatchallMultiAccountChannelSchema(OpclawZaloAccountSchema);
 
 // --- UI-aware config schema for the control panel ---
 
 /** Pre-built config schema with uiHints for the OpenClaw control UI. */
-export const ZaloPersonalChannelConfigSchema = buildChannelConfigSchema(
-  ZaloPersonalConfigSchema,
+export const OpclawZaloChannelConfigSchema = buildChannelConfigSchema(
+  OpclawZaloConfigSchema,
   {
     uiHints: {
       "": {
-        label: "Zalo Personal",
+        label: "OpenClaw Zalo",
         help: "Channel status and configuration.",
       },
       dmPolicy: {

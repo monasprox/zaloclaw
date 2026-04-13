@@ -60,7 +60,7 @@ function countStripsBefore(sorted: number[], value: number): number {
   return lo;
 }
 
-export type ZaloPersonalSendOptions = {
+export type OpclawZaloSendOptions = {
   mediaUrl?: string;
   caption?: string;
   isGroup?: boolean;
@@ -68,17 +68,17 @@ export type ZaloPersonalSendOptions = {
   cleanupAfterUpload?: boolean;
 };
 
-export type ZaloPersonalSendResult = {
+export type OpclawZaloSendResult = {
   ok: boolean;
   messageId?: string;
   error?: string;
 };
 
-export async function sendMessageZaloPersonal(
+export async function sendMessageOpclawZalo(
   threadId: string,
   text: string,
-  options: ZaloPersonalSendOptions = {},
-): Promise<ZaloPersonalSendResult> {
+  options: OpclawZaloSendOptions = {},
+): Promise<OpclawZaloSendResult> {
   if (!threadId?.trim()) return { ok: false, error: "No threadId provided" };
 
   if (options.localPath) {
@@ -96,7 +96,7 @@ export async function sendMessageZaloPersonal(
   }
 
   if (options.mediaUrl) {
-    return sendMediaZaloPersonal(threadId, options.mediaUrl, {
+    return sendMediaOpclawZalo(threadId, options.mediaUrl, {
       ...options,
       caption: text || options.caption,
     });
@@ -138,11 +138,11 @@ export async function sendMessageZaloPersonal(
   }
 }
 
-async function sendMediaZaloPersonal(
+async function sendMediaOpclawZalo(
   threadId: string,
   mediaUrl: string,
-  options: ZaloPersonalSendOptions = {},
-): Promise<ZaloPersonalSendResult> {
+  options: OpclawZaloSendOptions = {},
+): Promise<OpclawZaloSendResult> {
   if (!threadId?.trim()) return { ok: false, error: "No threadId provided" };
   if (!mediaUrl?.trim()) return { ok: false, error: "No media URL provided" };
   try {
@@ -160,11 +160,11 @@ async function sendMediaZaloPersonal(
   }
 }
 
-export async function sendLinkZaloPersonal(
+export async function sendLinkOpclawZalo(
   threadId: string,
   url: string,
-  options: ZaloPersonalSendOptions = {},
-): Promise<ZaloPersonalSendResult> {
+  options: OpclawZaloSendOptions = {},
+): Promise<OpclawZaloSendResult> {
   if (!threadId?.trim()) return { ok: false, error: "No threadId provided" };
   if (!url?.trim()) return { ok: false, error: "No URL provided" };
   try {
@@ -181,8 +181,8 @@ export async function sendLinkZaloPersonal(
 async function uploadAndSendLocalImage(
   threadId: string,
   localPath: string,
-  options: ZaloPersonalSendOptions = {},
-): Promise<ZaloPersonalSendResult> {
+  options: OpclawZaloSendOptions = {},
+): Promise<OpclawZaloSendResult> {
   if (!threadId?.trim()) return { ok: false, error: "No threadId provided" };
   if (!localPath?.trim()) return { ok: false, error: "No local path provided" };
   if (!fs.existsSync(localPath)) return { ok: false, error: `File not found: ${localPath}` };

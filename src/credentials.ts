@@ -4,24 +4,24 @@ import { homedir } from "node:os";
 
 const CREDENTIALS_PATH = join(homedir(), ".openclaw", "opclaw-zalo-credentials.json");
 
-export type ZaloPersonalCredentials = {
+export type OpclawZaloCredentials = {
   imei: string;
   cookie: unknown;
   userAgent: string;
   language?: string;
 };
 
-export function saveCredentials(data: ZaloPersonalCredentials): void {
+export function saveCredentials(data: OpclawZaloCredentials): void {
   writeFileSync(CREDENTIALS_PATH, JSON.stringify(data, null, 2), "utf-8");
 }
 
-export function loadCredentials(): ZaloPersonalCredentials | null {
+export function loadCredentials(): OpclawZaloCredentials | null {
   if (!existsSync(CREDENTIALS_PATH)) {
     return null;
   }
   try {
     const raw = readFileSync(CREDENTIALS_PATH, "utf-8");
-    return JSON.parse(raw) as ZaloPersonalCredentials;
+    return JSON.parse(raw) as OpclawZaloCredentials;
   } catch {
     return null;
   }

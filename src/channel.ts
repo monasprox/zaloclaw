@@ -16,20 +16,20 @@ import {
   normalizeAccountId,
   setAccountEnabledInConfigSection,
 } from "openclaw/plugin-sdk/channel-plugin-common";
-import type { ZaloPersonalFriend, ZaloPersonalGroup, ZaloPersonalUserInfo } from "./types.js";
+import type { OpclawZaloFriend, OpclawZaloGroup, OpclawZaloUserInfo } from "./types.js";
 import {
-  listZaloPersonalAccountIds,
-  resolveDefaultZaloPersonalAccountId,
-  resolveZaloPersonalAccountSync,
-  getZaloPersonalUserInfo,
-  checkZaloPersonalAuthenticated,
-  type ResolvedZaloPersonalAccount,
+  listOpclawZaloAccountIds,
+  resolveDefaultOpclawZaloAccountId,
+  resolveOpclawZaloAccountSync,
+  getOpclawZaloUserInfo,
+  checkOpclawZaloAuthenticated,
+  type ResolvedOpclawZaloAccount,
 } from "./accounts.js";
-import { ZaloPersonalConfigSchema, ZaloPersonalChannelConfigSchema } from "./config-schema.js";
-import { zaloPersonalOnboardingAdapter } from "./onboarding.js";
-import { probeZaloPersonal } from "./probe.js";
-import { sendMessageZaloPersonal, isLocalFilePath } from "./send.js";
-import { collectZaloPersonalStatusIssues } from "./status-issues.js";
+import { OpclawZaloConfigSchema, OpclawZaloChannelConfigSchema } from "./config-schema.js";
+import { opclawZaloOnboardingAdapter } from "./onboarding.js";
+import { probeOpclawZalo } from "./probe.js";
+import { sendMessageOpclawZalo, isLocalFilePath } from "./send.js";
+import { collectOpclawZaloStatusIssues } from "./status-issues.js";
 import { hasStoredCredentials, loginWithQR } from "./zalo-client.js";
 import { LoginQRCallbackEventType } from "zca-js";
 import { displayQRFromPNG } from "./qr-display.js";
@@ -38,8 +38,8 @@ import * as readline from "readline";
 
 const meta = {
   id: "opclaw-zalo",
-  label: "Zalo Personal",
-  selectionLabel: "Zalo Personal Account",
+  label: "OpenClaw Zalo",
+  selectionLabel: "OpenClaw Zalo Account",
   docsPath: "/channels/opclaw-zalo",
   docsLabel: "opclaw-zalo",
   blurb: "Zalo personal account via zca-js library (no CLI needed).",
@@ -76,8 +76,8 @@ function mapGroup(params: {
   };
 }
 
-function resolveZaloPersonalGroupRequireMention(params: ChannelGroupContext): boolean {
-  const account = resolveZaloPersonalAccountSync({
+function resolveOpclawZaloGroupRequireMention(params: ChannelGroupContext): boolean {
+  const account = resolveOpclawZaloAccountSync({
     cfg: params.cfg,
     accountId: params.accountId ?? undefined,
   });
@@ -92,10 +92,10 @@ function resolveZaloPersonalGroupRequireMention(params: ChannelGroupContext): bo
   return true;
 }
 
-function resolveZaloPersonalGroupToolPolicy(
+function resolveOpclawZaloGroupToolPolicy(
   params: ChannelGroupContext,
 ): GroupToolPolicyConfig | undefined {
-  const account = resolveZaloPersonalAccountSync({
+  const account = resolveOpclawZaloAccountSync({
     cfg: params.cfg,
     accountId: params.accountId ?? undefined,
   });
@@ -110,7 +110,7 @@ function resolveZaloPersonalGroupToolPolicy(
   return undefined;
 }
 
-export const zaloPersonalDock: ChannelDock = {
+export const opclawZaloDock: ChannelDock = {
   id: "opclaw-zalo",
   capabilities: {
     chatTypes: ["direct", "group"],
@@ -120,7 +120,7 @@ export const zaloPersonalDock: ChannelDock = {
   outbound: { textChunkLimit: 2000 },
   config: {
     resolveAllowFrom: ({ cfg, accountId }) =>
-      (resolveZaloPersonalAccountSync({ cfg, accountId }).config.allowFrom ?? []).map((entry) =>
+      (resolveOpclawZaloAccountSync({ cfg, accountId }).config.allowFrom ?? []).map((entry) =>
         String(entry),
       ),
     formatAllowFrom: ({ allowFrom }) =>
@@ -131,18 +131,18 @@ export const zaloPersonalDock: ChannelDock = {
         .map((entry) => entry.toLowerCase()),
   },
   groups: {
-    resolveRequireMention: resolveZaloPersonalGroupRequireMention,
-    resolveToolPolicy: resolveZaloPersonalGroupToolPolicy,
+    resolveRequireMention: resolveOpclawZaloGroupRequireMention,
+    resolveToolPolicy: resolveOpclawZaloGroupToolPolicy,
   },
   threading: {
     resolveReplyToMode: () => "off",
   },
 };
 
-export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
+export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
   id: "opclaw-zalo",
   meta,
-  onboarding: zaloPersonalOnboardingAdapter,
+  onboarding: opclawZaloOnboardingAdapter,
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
@@ -153,11 +153,11 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     blockStreaming: true,
   },
   reload: { configPrefixes: ["channels['opclaw-zalo']"] },
-  configSchema: ZaloPersonalChannelConfigSchema,
+  configSchema: OpclawZaloChannelConfigSchema,
   config: {
-    listAccountIds: (cfg) => listZaloPersonalAccountIds(cfg),
-    resolveAccount: (cfg, accountId) => resolveZaloPersonalAccountSync({ cfg, accountId }),
-    defaultAccountId: (cfg) => resolveDefaultZaloPersonalAccountId(cfg),
+    listAccountIds: (cfg) => listOpclawZaloAccountIds(cfg),
+    resolveAccount: (cfg, accountId) => resolveOpclawZaloAccountSync({ cfg, accountId }),
+    defaultAccountId: (cfg) => resolveDefaultOpclawZaloAccountId(cfg),
     setAccountEnabled: ({ cfg, accountId, enabled }) =>
       setAccountEnabledInConfigSection({
         cfg,
@@ -188,7 +188,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       configured: hasStoredCredentials(),
     }),
     resolveAllowFrom: ({ cfg, accountId }) =>
-      (resolveZaloPersonalAccountSync({ cfg, accountId }).config.allowFrom ?? []).map((entry) =>
+      (resolveOpclawZaloAccountSync({ cfg, accountId }).config.allowFrom ?? []).map((entry) =>
         String(entry),
       ),
     formatAllowFrom: ({ allowFrom }) =>
@@ -216,8 +216,8 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     },
   },
   groups: {
-    resolveRequireMention: resolveZaloPersonalGroupRequireMention,
-    resolveToolPolicy: resolveZaloPersonalGroupToolPolicy,
+    resolveRequireMention: resolveOpclawZaloGroupRequireMention,
+    resolveToolPolicy: resolveOpclawZaloGroupToolPolicy,
   },
   agentPrompt: {
     messageToolHints: () => [
@@ -448,17 +448,17 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     },
   },
   pairing: {
-    idLabel: "zaloPersonalUserId",
+    idLabel: "opclawZaloUserId",
     normalizeAllowEntry: (entry) => entry.replace(/^(opclaw-zalo|oz):/i, ""),
     notifyApproval: async ({ cfg, id }) => {
-      const authenticated = await checkZaloPersonalAuthenticated();
-      if (!authenticated) throw new Error("ZaloPersonal not authenticated");
-      await sendMessageZaloPersonal(id, "Your pairing request has been approved.");
+      const authenticated = await checkOpclawZaloAuthenticated();
+      if (!authenticated) throw new Error("OpclawZalo not authenticated");
+      await sendMessageOpclawZalo(id, "Your pairing request has been approved.");
     },
   },
   auth: {
     login: async ({ cfg, accountId, runtime }) => {
-      runtime.log(`Scan the QR code to link Zalo Personal (account: ${accountId ?? DEFAULT_ACCOUNT_ID}).`);
+      runtime.log(`Scan the QR code to link OpenClaw Zalo (account: ${accountId ?? DEFAULT_ACCOUNT_ID}).`);
       let qrFilePath: string | null = null;
       try {
         await loginWithQR(async (event) => {
@@ -523,8 +523,8 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
     chunkerMode: "markdown",
     textChunkLimit: 2000,
     sendText: async ({ to, text, accountId, cfg }) => {
-      const account = resolveZaloPersonalAccountSync({ cfg, accountId });
-      const result = await sendMessageZaloPersonal(to, text);
+      const account = resolveOpclawZaloAccountSync({ cfg, accountId });
+      const result = await sendMessageOpclawZalo(to, text);
       return {
         channel: "opclaw-zalo",
         ok: result.ok,
@@ -533,7 +533,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       };
     },
     sendMedia: async ({ to, text, mediaUrl, accountId, cfg }) => {
-      const account = resolveZaloPersonalAccountSync({ cfg, accountId });
+      const account = resolveOpclawZaloAccountSync({ cfg, accountId });
       let options: any = {};
       if (mediaUrl && isLocalFilePath(mediaUrl) && fs.existsSync(mediaUrl)) {
         options.localPath = mediaUrl;
@@ -542,7 +542,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
         options.mediaUrl = mediaUrl;
         options.caption = text;
       }
-      const result = await sendMessageZaloPersonal(to, text, options);
+      const result = await sendMessageOpclawZalo(to, text, options);
       return {
         channel: "opclaw-zalo",
         ok: result.ok,
@@ -559,7 +559,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       lastStopAt: null,
       lastError: null,
     },
-    collectStatusIssues: collectZaloPersonalStatusIssues,
+    collectStatusIssues: collectOpclawZaloStatusIssues,
     buildChannelSummary: ({ snapshot }) => ({
       configured: snapshot.configured ?? false,
       running: snapshot.running ?? false,
@@ -569,7 +569,7 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       probe: snapshot.probe,
       lastProbeAt: snapshot.lastProbeAt ?? null,
     }),
-    probeAccount: async ({ account, timeoutMs }) => probeZaloPersonal(timeoutMs),
+    probeAccount: async ({ account, timeoutMs }) => probeOpclawZalo(timeoutMs),
     buildAccountSnapshot: async ({ account, runtime }) => {
       const configured = hasStoredCredentials();
       return {
@@ -594,13 +594,13 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
       const account = ctx.account;
       let userLabel = "";
       try {
-        const userInfo = await getZaloPersonalUserInfo();
+        const userInfo = await getOpclawZaloUserInfo();
         if (userInfo?.displayName) userLabel = ` (${userInfo.displayName})`;
         ctx.setStatus({ accountId: account.accountId, profile: userInfo });
       } catch {}
       ctx.log?.info(`[${account.accountId}] starting opclaw-zalo provider${userLabel}`);
-      const { monitorZaloPersonalProvider } = await import("./monitor.js");
-      return monitorZaloPersonalProvider({
+      const { monitorOpclawZaloProvider } = await import("./monitor.js");
+      return monitorOpclawZaloProvider({
         account,
         config: ctx.cfg,
         runtime: ctx.runtime,
@@ -636,4 +636,4 @@ export const zaloPersonalPlugin: ChannelPlugin<ResolvedZaloPersonalAccount> = {
   },
 };
 
-export type { ResolvedZaloPersonalAccount };
+export type { ResolvedOpclawZaloAccount };

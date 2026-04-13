@@ -16,9 +16,9 @@ function resolveMentionGatingWithBypass(params: {
 }
 
 import { ThreadType, FriendEventType, Reactions, type API, type Message, type UserMessage, type GroupMessage, type FriendEvent, type Reaction, type Typing } from "zca-js";
-import type { ResolvedZaloPersonalAccount, ZaloPersonalFriend, ZaloPersonalGroup, ZaloPersonalMessage } from "./types.js";
-import { getZaloPersonalRuntime } from "./runtime.js";
-import { sendMessageZaloPersonal } from "./send.js";
+import type { ResolvedOpclawZaloAccount, OpclawZaloFriend, OpclawZaloGroup, OpclawZaloMessage } from "./types.js";
+import { getOpclawZaloRuntime } from "./runtime.js";
+import { sendMessageOpclawZalo } from "./send.js";
 import { getApi, getCurrentUid } from "./zalo-client.js";
 import { downloadImagesFromUrls } from "./image-downloader.js";
 import { getThreadMediaDir } from "./thread-sandbox.js";
@@ -27,15 +27,15 @@ import { recordReadReceipt } from "./features/read-receipt.js";
 import { recordMsgId } from "./features/msg-id-store.js";
 import { refreshCredentials } from "./credentials.js";
 
-export type ZaloPersonalMonitorOptions = {
-  account: ResolvedZaloPersonalAccount;
+export type OpclawZaloMonitorOptions = {
+  account: ResolvedOpclawZaloAccount;
   config: OpenClawConfig;
   runtime: RuntimeEnv;
   abortSignal: AbortSignal;
   statusSink?: (patch: { lastInboundAt?: number; lastOutboundAt?: number }) => void;
 };
 
-export type ZaloPersonalMonitorResult = {
+export type OpclawZaloMonitorResult = {
   stop: () => void;
 };
 
@@ -101,7 +101,7 @@ async function resolveGroupName(groupId: string): Promise<string> {
   }
 }
 
-function normalizeZaloPersonalEntry(entry: string): string {
+function normalizeOpclawZaloEntry(entry: string): string {
   return entry.replace(/^(opclaw-zalo|oz):/i, "").trim();
 }
 
@@ -117,9 +117,9 @@ function buildNameIndex<T>(items: T[], nameFn: (item: T) => string | undefined):
   return index;
 }
 
-type ZaloPersonalCoreRuntime = ReturnType<typeof getZaloPersonalRuntime>;
+type OpclawZaloCoreRuntime = ReturnType<typeof getOpclawZaloRuntime>;
 
-function logVerbose(core: ZaloPersonalCoreRuntime, runtime: RuntimeEnv, message: string): void {
+function logVerbose(core: OpclawZaloCoreRuntime, runtime: RuntimeEnv, message: string): void {
   if (core.logging.shouldLogVerbose()) {
     runtime.log(`[opclaw-zalo] ${message}`);
   }
@@ -250,7 +250,7 @@ function extractMediaFromObject(obj: any, mediaUrls: string[], mediaTypes: strin
   return obj.title || obj.description || (mediaUrls.length > 0 ? "[Media attachment]" : "");
 }
 
-function convertToZaloPersonalMessage(msg: Message): ZaloPersonalMessage | null {
+function convertToOpclawZaloMessage(msg: Message): OpclawZaloMessage | null {
   const data = msg.data;
   let content = "";
   const mediaUrls: string[] = [];
@@ -313,10 +313,10 @@ function convertToZaloPersonalMessage(msg: Message): ZaloPersonalMessage | null 
 }
 
 async function processMessage(
-  message: ZaloPersonalMessage,
-  account: ResolvedZaloPersonalAccount,
+  message: OpclawZaloMessage,
+  account: ResolvedOpclawZaloAccount,
   config: OpenClawConfig,
-  core: ZaloPersonalCoreRuntime,
+  core: OpclawZaloCoreRuntime,
   runtime: RuntimeEnv,
   statusSink?: (patch: { lastInboundAt?: number; lastOutboundAt?: number }) => void,
 ): Promise<void> {
@@ -402,7 +402,7 @@ async function processMessage(
           if (created) {
             logVerbose(core, runtime, `pairing request sender=${senderId}`);
             try {
-              await sendMessageZaloPersonal(
+              await sendMessageOpclawZalo(
                 chatId,
                 core.channel.pairing.buildPairingReply({
                   channel: "opclaw-zalo",
@@ -643,7 +643,7 @@ async function processMessage(
       dispatcherOptions: {
         ...prefixOptions,
         deliver: async (payload) => {
-          await deliverZaloPersonalReply({
+          await deliverOpclawZaloReply({
             payload: payload as { text?: string; mediaUrls?: string[]; mediaUrl?: string; isReasoning?: boolean },
             chatId,
             isGroup,
@@ -698,7 +698,7 @@ async function processMessage(
   }
 }
 
-function resolveGroupMentionSetting(account: ResolvedZaloPersonalAccount, groupId: string): boolean {
+function resolveGroupMentionSetting(account: ResolvedOpclawZaloAccount, groupId: string): boolean {
   const groups = account.config.groups ?? {};
   const candidates = [groupId, `group:${groupId}`, "*"];
   for (const key of candidates) {
@@ -723,12 +723,12 @@ function stripThinkingTags(text: string): string {
   return text.replace(/<(?:think|thinking|thought|antthinking)\b[^>]*>[\s\S]*?<\/(?:think|thinking|thought|antthinking)>/gi, "").trim();
 }
 
-async function deliverZaloPersonalReply(params: {
+async function deliverOpclawZaloReply(params: {
   payload: { text?: string; mediaUrls?: string[]; mediaUrl?: string; isReasoning?: boolean };
   chatId: string;
   isGroup: boolean;
   runtime: RuntimeEnv;
-  core: ZaloPersonalCoreRuntime;
+  core: OpclawZaloCoreRuntime;
   config: OpenClawConfig;
   accountId?: string;
   statusSink?: (patch: { lastInboundAt?: number; lastOutboundAt?: number }) => void;
@@ -762,7 +762,7 @@ async function deliverZaloPersonalReply(params: {
       const caption = first ? text : undefined;
       first = false;
       try {
-        await sendMessageZaloPersonal(chatId, caption ?? "", { mediaUrl, isGroup });
+        await sendMessageOpclawZalo(chatId, caption ?? "", { mediaUrl, isGroup });
         statusSink?.({ lastOutboundAt: Date.now() });
       } catch (err) {
         runtime.error(`Media send failed: ${String(err)}`);
@@ -777,7 +777,7 @@ async function deliverZaloPersonalReply(params: {
     logVerbose(core, runtime, `Sending ${chunks.length} text chunk(s) to ${chatId}`);
     for (const chunk of chunks) {
       try {
-        await sendMessageZaloPersonal(chatId, chunk, { isGroup });
+        await sendMessageOpclawZalo(chatId, chunk, { isGroup });
         statusSink?.({ lastOutboundAt: Date.now() });
       } catch (err) {
         runtime.error(`Message send failed: ${String(err)}`);
@@ -786,13 +786,13 @@ async function deliverZaloPersonalReply(params: {
   }
 }
 
-export async function monitorZaloPersonalProvider(
-  options: ZaloPersonalMonitorOptions,
-): Promise<ZaloPersonalMonitorResult> {
+export async function monitorOpclawZaloProvider(
+  options: OpclawZaloMonitorOptions,
+): Promise<OpclawZaloMonitorResult> {
   let { account, config } = options;
   const { abortSignal, statusSink, runtime } = options;
 
-  const core = getZaloPersonalRuntime();
+  const core = getOpclawZaloRuntime();
   let stopped = false;
   let restartTimer: ReturnType<typeof setTimeout> | null = null;
   let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
@@ -801,14 +801,14 @@ export async function monitorZaloPersonalProvider(
   // Resolve allowFrom name→id mappings
   try {
     const allowFromEntries = (account.config.allowFrom ?? [])
-      .map((entry) => normalizeZaloPersonalEntry(String(entry)))
+      .map((entry) => normalizeOpclawZaloEntry(String(entry)))
       .filter((entry) => entry && entry !== "*");
 
     if (allowFromEntries.length > 0) {
       try {
         const api = await getApi();
         const friends = await api.getAllFriends();
-        const friendList: ZaloPersonalFriend[] = Array.isArray(friends)
+        const friendList: OpclawZaloFriend[] = Array.isArray(friends)
           ? friends.map((f: any) => ({
               userId: String(f.userId),
               displayName: f.displayName ?? f.zaloName ?? "",
@@ -837,14 +837,14 @@ export async function monitorZaloPersonalProvider(
 
     // Resolve denyFrom
     const denyFromEntries = (account.config.denyFrom ?? [])
-      .map((entry) => normalizeZaloPersonalEntry(String(entry)))
+      .map((entry) => normalizeOpclawZaloEntry(String(entry)))
       .filter((entry) => entry && entry !== "*");
 
     if (denyFromEntries.length > 0) {
       try {
         const api = await getApi();
         const friends = await api.getAllFriends();
-        const friendList: ZaloPersonalFriend[] = Array.isArray(friends)
+        const friendList: OpclawZaloFriend[] = Array.isArray(friends)
           ? friends.map((f: any) => ({
               userId: String(f.userId),
               displayName: f.displayName ?? f.zaloName ?? "",
@@ -879,7 +879,7 @@ export async function monitorZaloPersonalProvider(
         const api = await getApi();
         const groupsResp = await api.getAllGroups();
         const groupIds = Object.keys(groupsResp?.gridVerMap ?? {});
-        let groupList: ZaloPersonalGroup[] = [];
+        let groupList: OpclawZaloGroup[] = [];
         if (groupIds.length > 0) {
           try {
             const infoResp = await api.getGroupInfo(groupIds);
@@ -896,7 +896,7 @@ export async function monitorZaloPersonalProvider(
         const unresolved: string[] = [];
         const nextGroups = { ...groupsConfig };
         for (const entry of groupKeys) {
-          const cleaned = normalizeZaloPersonalEntry(entry);
+          const cleaned = normalizeOpclawZaloEntry(entry);
           if (/^\d+$/.test(cleaned)) {
             if (!nextGroups[cleaned]) nextGroups[cleaned] = groupsConfig[entry];
             mapping.push(`${entry}→${cleaned}`);
@@ -918,12 +918,12 @@ export async function monitorZaloPersonalProvider(
           const groupConfig = nextGroups[groupKey];
           if (!groupConfig.denyUsers || groupConfig.denyUsers.length === 0) continue;
           const denyUserEntries = groupConfig.denyUsers
-            .map((entry) => normalizeZaloPersonalEntry(String(entry)))
+            .map((entry) => normalizeOpclawZaloEntry(String(entry)))
             .filter((entry) => entry && entry !== "*");
           if (denyUserEntries.length === 0) continue;
 
           const friends = await api.getAllFriends();
-          const friendList: ZaloPersonalFriend[] = Array.isArray(friends)
+          const friendList: OpclawZaloFriend[] = Array.isArray(friends)
             ? friends.map((f: any) => ({
                 userId: String(f.userId),
                 displayName: f.displayName ?? f.zaloName ?? "",
@@ -984,7 +984,7 @@ export async function monitorZaloPersonalProvider(
       api.listener.on("message", (msg: Message) => {
         if (msg.isSelf) return;
         if (selfUid && msg.data.uidFrom === selfUid) return;
-        const converted = convertToZaloPersonalMessage(msg);
+        const converted = convertToOpclawZaloMessage(msg);
         if (!converted) return;
         logVerbose(core, runtime, `[${account.accountId}] inbound message`);
         statusSink?.({ lastInboundAt: Date.now() });
