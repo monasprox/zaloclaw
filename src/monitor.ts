@@ -24,6 +24,7 @@ import { downloadImagesFromUrls } from "./image-downloader.js";
 import { getThreadMediaDir } from "./thread-sandbox.js";
 import { addPendingRequest, removePendingRequest } from "./friend-request-store.js";
 import { recordReadReceipt } from "./features/read-receipt.js";
+import { recordMsgId } from "./features/msg-id-store.js";
 import { refreshCredentials } from "./credentials.js";
 
 export type ZaloPersonalMonitorOptions = {
@@ -229,6 +230,26 @@ function isGroupAllowed(params: {
   return false;
 }
 
+function extractMediaFromObject(obj: any, mediaUrls: string[], mediaTypes: string[]): string {
+  // Try href (link/attachment messages)
+  if (obj.href) {
+    mediaUrls.push(obj.href);
+    const attachmentType = (obj.type ?? "").toLowerCase();
+    let mimeType = "application/octet-stream";
+    if (attachmentType.includes("photo") || attachmentType.includes("image")) mimeType = "image/jpeg";
+    else if (attachmentType.includes("video")) mimeType = "video/mp4";
+    else if (attachmentType.includes("audio")) mimeType = "audio/mpeg";
+    mediaTypes.push(mimeType);
+  }
+  // Try hdUrl/normalUrl/oriUrl/thumb (photo messages)
+  const photoUrl = obj.hdUrl || obj.normalUrl || obj.oriUrl || obj.thumb;
+  if (photoUrl && !mediaUrls.includes(photoUrl)) {
+    mediaUrls.push(photoUrl);
+    mediaTypes.push("image/jpeg");
+  }
+  return obj.title || obj.description || (mediaUrls.length > 0 ? "[Media attachment]" : "");
+}
+
 function convertToZaloPersonalMessage(msg: Message): ZaloPersonalMessage | null {
   const data = msg.data;
   let content = "";
@@ -236,19 +257,27 @@ function convertToZaloPersonalMessage(msg: Message): ZaloPersonalMessage | null 
   const mediaTypes: string[] = [];
 
   if (typeof data.content === "string") {
-    content = data.content;
+    // Some image messages have JSON-encoded content strings
+    const trimmed = data.content.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === "object" && parsed !== null) {
+          content = extractMediaFromObject(parsed, mediaUrls, mediaTypes);
+          if (!content && !mediaUrls.length) content = data.content;
+        } else {
+          content = data.content;
+        }
+      } catch {
+        content = data.content;
+      }
+    } else {
+      content = data.content;
+    }
   } else if (typeof data.content === "object" && data.content !== null) {
     const attachment = data.content as any;
-    if (attachment.href) {
-      mediaUrls.push(attachment.href);
-      const attachmentType = attachment.type?.toLowerCase() || "";
-      let mimeType = "application/octet-stream";
-      if (attachmentType.includes("photo") || attachmentType.includes("image")) mimeType = "image/jpeg";
-      else if (attachmentType.includes("video")) mimeType = "video/mp4";
-      else if (attachmentType.includes("audio")) mimeType = "audio/mpeg";
-      mediaTypes.push(mimeType);
-    }
-    content = attachment.title || attachment.description || "[Media attachment]";
+    content = extractMediaFromObject(attachment, mediaUrls, mediaTypes);
+    if (!content) content = "[Media attachment]";
   }
 
   if (!content.trim() && mediaUrls.length === 0) return null;
@@ -293,6 +322,11 @@ async function processMessage(
 ): Promise<void> {
   const { threadId, content, timestamp, metadata } = message;
   if (!content?.trim()) return;
+
+  // Record msgId→cliMsgId mapping for reaction/undo lookups
+  if (message.msgId && message.cliMsgId) {
+    recordMsgId(message.msgId, message.cliMsgId, threadId, metadata?.isGroup ?? false);
+  }
 
   const isGroup = metadata?.isGroup ?? false;
   const senderId = metadata?.fromId ?? threadId;
@@ -474,10 +508,12 @@ async function processMessage(
   }
 
   let bodyForEnvelope = bodyWithSender;
-  const mediaPathsForBody = localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths : message.mediaUrls;
-  if (mediaPathsForBody && mediaPathsForBody.length > 0) {
-    const mediaInfo = mediaPathsForBody.map((path, idx) => `[Image ${idx + 1}: ${path}]`).join('\n');
+  if (localMediaPaths && localMediaPaths.length > 0) {
+    const mediaInfo = localMediaPaths.map((p, idx) => `[Image ${idx + 1}: ${p}]`).join('\n');
     bodyForEnvelope = `${bodyWithSender}\n\n${mediaInfo}`;
+  } else if (message.mediaUrls && message.mediaUrls.length > 0) {
+    // Download failed — don't expose CDN URLs (SSRF blocked). Tell agent an image was sent.
+    bodyForEnvelope = `${bodyWithSender}\n\n[User sent ${message.mediaUrls.length} image(s) but download failed — image not available]`;
   }
 
   const body = core.channel.reply.formatAgentEnvelope({
@@ -507,8 +543,8 @@ async function processMessage(
     MessageSid: message.msgId ?? `${timestamp}`,
     OriginatingChannel: "opclaw-zalo",
     OriginatingTo: `'opclaw-zalo':${chatId}`,
-    MediaUrls: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths : message.mediaUrls,
-    MediaUrl: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths[0] : message.mediaUrls?.[0],
+    MediaUrls: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths : undefined,
+    MediaUrl: localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths[0] : undefined,
     MediaTypes: message.mediaTypes,
   });
 

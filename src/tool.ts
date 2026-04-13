@@ -18,6 +18,7 @@ import {
   UpdateSettingsType,
 } from "zca-js";
 import { getApi } from "./zalo-client.js";
+import { lookupCliMsgId } from "./features/msg-id-store.js";
 import {
   readOpenClawConfig,
   writeOpenClawConfig,
@@ -551,22 +552,42 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "undo-message": {
-      if (!p.msgId || !p.cliMsgId) throw new Error("msgId and cliMsgId required");
+      if (!p.msgId) throw new Error("msgId required");
+      let undoCliMsgId = p.cliMsgId as string | undefined;
+      if (!undoCliMsgId) {
+        const stored = lookupCliMsgId(p.msgId);
+        if (stored) undoCliMsgId = stored.cliMsgId;
+      }
+      if (!undoCliMsgId) throw new Error("cliMsgId not found — message may be too old");
       const a = await api();
-      const res = await a.undo({ msgId: p.msgId, cliMsgId: p.cliMsgId });
+      const res = await a.undo({ msgId: p.msgId, cliMsgId: undoCliMsgId });
       return ok({ success: true, result: res });
     }
 
     // ── Reactions ──────────────────────────────────────────────────────────
 
     case "add-reaction": {
-      if (!p.msgId || !p.cliMsgId || !p.threadId || !p.icon)
-        throw new Error("msgId, cliMsgId, threadId, and icon required");
+      if (!p.msgId || !p.icon)
+        throw new Error("msgId and icon required");
+      // Auto-lookup cliMsgId and threadId from in-memory store if not provided
+      let cliMsgId = p.cliMsgId as string | undefined;
+      let threadId = p.threadId as string | undefined;
+      let isGroup = p.isGroup as boolean | undefined;
+      if (!cliMsgId || !threadId) {
+        const stored = lookupCliMsgId(p.msgId);
+        if (stored) {
+          cliMsgId = cliMsgId || stored.cliMsgId;
+          threadId = threadId || stored.threadId;
+          isGroup = isGroup ?? stored.isGroup;
+        }
+      }
+      if (!cliMsgId || !threadId)
+        throw new Error("cliMsgId/threadId not found — message may be too old or from before bot started");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
+      const type = isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.addReaction(resolveReaction(p.icon), {
-        data: { msgId: p.msgId, cliMsgId: p.cliMsgId },
-        threadId: p.threadId,
+        data: { msgId: p.msgId, cliMsgId },
+        threadId,
         type,
       });
       return ok({ success: true, result: res });
