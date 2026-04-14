@@ -55,6 +55,31 @@ function ok(data: unknown): ToolResult {
   };
 }
 
+/**
+ * [L5] Safe wrapper for config read/write operations with clear error messages.
+ */
+function safeReadConfig() {
+  try {
+    return readOpenClawConfig();
+  } catch (err) {
+    throw new Error(
+      `Failed to read OpenClaw config: ${err instanceof Error ? err.message : String(err)}. ` +
+      `Make sure the config file exists and is valid JSON.`,
+    );
+  }
+}
+
+function safeWriteConfig(cfg: ReturnType<typeof readOpenClawConfig>) {
+  try {
+    writeOpenClawConfig(cfg);
+  } catch (err) {
+    throw new Error(
+      `Failed to write OpenClaw config: ${err instanceof Error ? err.message : String(err)}. ` +
+      `Check file permissions.`,
+    );
+  }
+}
+
 // ─── Name→ID resolvers ──────────────────────────────────────────────────────
 
 async function resolveUserId(nameOrId: string): Promise<string> {
@@ -1712,26 +1737,26 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "block-user": {
       if (!p.userId) throw new Error("userId required");
       const uid = await resolveUserId(p.userId);
-      const cfg = readOpenClawConfig();
-      writeOpenClawConfig(addToDenyFrom(cfg, uid));
+      const cfg = safeReadConfig();
+      safeWriteConfig(addToDenyFrom(cfg, uid));
       return ok({ success: true, userId: uid, note: "Restart gateway for changes to take effect" });
     }
 
     case "unblock-user": {
       if (!p.userId) throw new Error("userId required");
       const uid = await resolveUserId(p.userId);
-      const cfg = readOpenClawConfig();
-      writeOpenClawConfig(removeFromDenyFrom(cfg, uid));
+      const cfg = safeReadConfig();
+      safeWriteConfig(removeFromDenyFrom(cfg, uid));
       return ok({ success: true, userId: uid, note: "Restart gateway for changes to take effect" });
     }
 
     case "list-blocked": {
-      const cfg = readOpenClawConfig();
+      const cfg = safeReadConfig();
       return ok({ blocked: listBlockedUsers(cfg) });
     }
 
     case "list-allowed": {
-      const cfg = readOpenClawConfig();
+      const cfg = safeReadConfig();
       return ok({ allowed: listAllowedUsers(cfg) });
     }
 
@@ -1739,8 +1764,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.userId || !p.groupId) throw new Error("userId and groupId required");
       const uid = await resolveUserId(p.userId);
       const gid = await resolveGroupId(p.groupId);
-      const cfg = readOpenClawConfig();
-      writeOpenClawConfig(addToGroupDenyUsers(cfg, gid, uid));
+      const cfg = safeReadConfig();
+      safeWriteConfig(addToGroupDenyUsers(cfg, gid, uid));
       return ok({ success: true, userId: uid, groupId: gid, note: "Restart gateway" });
     }
 
@@ -1748,8 +1773,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.userId || !p.groupId) throw new Error("userId and groupId required");
       const uid = await resolveUserId(p.userId);
       const gid = await resolveGroupId(p.groupId);
-      const cfg = readOpenClawConfig();
-      writeOpenClawConfig(removeFromGroupDenyUsers(cfg, gid, uid));
+      const cfg = safeReadConfig();
+      safeWriteConfig(removeFromGroupDenyUsers(cfg, gid, uid));
       return ok({ success: true, userId: uid, groupId: gid, note: "Restart gateway" });
     }
 
@@ -1757,8 +1782,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.userId || !p.groupId) throw new Error("userId and groupId required");
       const uid = await resolveUserId(p.userId);
       const gid = await resolveGroupId(p.groupId);
-      const cfg = readOpenClawConfig();
-      writeOpenClawConfig(addToGroupAllowUsers(cfg, gid, uid));
+      const cfg = safeReadConfig();
+      safeWriteConfig(addToGroupAllowUsers(cfg, gid, uid));
       return ok({ success: true, userId: uid, groupId: gid, note: "Restart gateway" });
     }
 
@@ -1766,30 +1791,30 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.userId || !p.groupId) throw new Error("userId and groupId required");
       const uid = await resolveUserId(p.userId);
       const gid = await resolveGroupId(p.groupId);
-      const cfg = readOpenClawConfig();
-      writeOpenClawConfig(removeFromGroupAllowUsers(cfg, gid, uid));
+      const cfg = safeReadConfig();
+      safeWriteConfig(removeFromGroupAllowUsers(cfg, gid, uid));
       return ok({ success: true, userId: uid, groupId: gid, note: "Restart gateway" });
     }
 
     case "list-allowed-in-group": {
       if (!p.groupId) throw new Error("groupId required");
       const gid = await resolveGroupId(p.groupId);
-      const cfg = readOpenClawConfig();
+      const cfg = safeReadConfig();
       return ok({ groupId: gid, allowed: listAllowedUsersInGroup(cfg, gid) });
     }
 
     case "list-blocked-in-group": {
       if (!p.groupId) throw new Error("groupId required");
       const gid = await resolveGroupId(p.groupId);
-      const cfg = readOpenClawConfig();
+      const cfg = safeReadConfig();
       return ok({ groupId: gid, blocked: listBlockedUsersInGroup(cfg, gid) });
     }
 
     case "group-mention": {
       if (!p.groupId || p.requireMention === undefined) throw new Error("groupId and requireMention required");
       const gid = await resolveGroupId(p.groupId);
-      const cfg = readOpenClawConfig();
-      writeOpenClawConfig(setGroupRequireMention(cfg, gid, p.requireMention));
+      const cfg = safeReadConfig();
+      safeWriteConfig(setGroupRequireMention(cfg, gid, p.requireMention));
       return ok({
         success: true, groupId: gid, requireMention: p.requireMention,
         note: "Restart gateway for changes to take effect",

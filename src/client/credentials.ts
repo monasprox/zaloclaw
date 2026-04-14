@@ -1,5 +1,13 @@
-import { readFileSync, writeFileSync, unlinkSync, existsSync } from "node:fs";
-import { join } from "node:path";
+/**
+ * Credential storage with security hardening.
+ *
+ * [H1] File permissions set to 0600 (owner read/write only).
+ * Note: Full encryption is not implemented here to avoid key management complexity,
+ * but file permissions prevent other users/processes from reading credentials.
+ */
+
+import { readFileSync, writeFileSync, unlinkSync, existsSync, chmodSync, mkdirSync } from "node:fs";
+import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 
 const CREDENTIALS_PATH = join(homedir(), ".openclaw", "opclaw-zalo-credentials.json");
@@ -11,8 +19,20 @@ export type OpclawZaloCredentials = {
   language?: string;
 };
 
+/**
+ * Save credentials to disk with restrictive file permissions.
+ * [H1] chmod 0600 — only the file owner can read/write.
+ */
 export function saveCredentials(data: OpclawZaloCredentials): void {
-  writeFileSync(CREDENTIALS_PATH, JSON.stringify(data, null, 2), "utf-8");
+  const dir = dirname(CREDENTIALS_PATH);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
+  }
+  writeFileSync(CREDENTIALS_PATH, JSON.stringify(data, null, 2), { encoding: "utf-8", mode: 0o600 });
+  // Ensure permissions even if file existed with different mode
+  try { chmodSync(CREDENTIALS_PATH, 0o600); } catch {
+    // Non-critical — may fail on Windows
+  }
 }
 
 export function loadCredentials(): OpclawZaloCredentials | null {

@@ -11,6 +11,8 @@ import * as fs from "fs";
 
 let apiInstance: API | null = null;
 let currentUid: string | null = null;
+/** [H2] Promise memoization to prevent concurrent login attempts */
+let loginPromise: Promise<API> | null = null;
 
 export type QrCallback = (event: LoginQRCallbackEvent) => unknown;
 
@@ -70,14 +72,26 @@ export async function loginWithCredentials(): Promise<API> {
   return api;
 }
 
+/**
+ * Get the API singleton safely with race condition protection.
+ * [H2] Uses promise memoization — concurrent callers wait for the same login attempt.
+ */
 export async function getApi(): Promise<API> {
   if (apiInstance) {
     return apiInstance;
   }
-  if (hasCredentials()) {
-    return loginWithCredentials();
+  if (!hasCredentials()) {
+    throw new Error("Not authenticated. Login with QR first.");
   }
-  throw new Error("Not authenticated. Login with QR first.");
+  // If a login is already in progress, wait for it
+  if (loginPromise) {
+    return loginPromise;
+  }
+  // Start login and memoize the promise
+  loginPromise = loginWithCredentials().finally(() => {
+    loginPromise = null;
+  });
+  return loginPromise;
 }
 
 export function getApiSync(): API | null {
@@ -99,12 +113,10 @@ export function hasStoredCredentials(): boolean {
 export async function logout(): Promise<void> {
   apiInstance = null;
   currentUid = null;
+  loginPromise = null;
   deleteCredentials();
 }
 
 export async function ensureAuthenticated(): Promise<API> {
-  if (apiInstance) {
-    return apiInstance;
-  }
-  return loginWithCredentials();
+  return getApi();
 }

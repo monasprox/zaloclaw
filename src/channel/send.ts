@@ -206,12 +206,20 @@ async function uploadAndSendLocalImage(
   }
 }
 
+/**
+ * Check if a string looks like a local file path (not a URL).
+ * [M1] Fixed: no longer matches URLs that happen to contain path-like substrings.
+ * Only matches strings that start with filesystem path indicators.
+ */
 export function isLocalFilePath(str: string): boolean {
   if (!str) return false;
+  const trimmed = str.trim();
+  // Must not look like a URL
+  if (/^https?:\/\//i.test(trimmed)) return false;
+  // Must start with absolute or relative path prefix
   return (
-    str.startsWith("/") ||
-    str.startsWith("./") ||
-    str.startsWith("../") ||
-    str.includes("/.openclaw/workspace/")
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("./") ||
+    trimmed.startsWith("../")
   );
 }
