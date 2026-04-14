@@ -17,6 +17,7 @@ import {
   MuteDuration,
   UpdateSettingsType,
   AutoReplyScope,
+  Urgency,
 } from "zca-js";
 import { getApi, getCurrentUid } from "../client/zalo-client.js";
 import { lookupCliMsgId } from "../features/msg-id-store.js";
@@ -241,6 +242,14 @@ const ACTIONS = [
   "update-product",
   "delete-product",
   "get-products",
+  // Zalo-level block
+  "zalo-block-user",
+  "zalo-unblock-user",
+  // New APIs
+  "get-reminder",
+  "get-reminder-responses",
+  "get-friend-board",
+  "get-full-avatar",
   // Bot config (OpenClaw layer)
   "block-user",
   "unblock-user",
@@ -323,11 +332,18 @@ export const OpclawZaloToolSchema = Type.Object(
     count: Type.Optional(Type.Number({ description: "Number of items to return" })),
     // Reaction
     icon: Type.Optional(Type.String({ description: "Reaction icon (heart, like, haha, wow, cry, angry)" })),
+    urgency: Type.Optional(Type.Number({ description: "Message urgency: 0=default, 1=important (tin quan trọng), 2=urgent" })),
+    messageTtl: Type.Optional(Type.Number({ description: "Self-destruct TTL in ms for send/send-styled (e.g. 60000=1min, 3600000=1h). Message auto-deletes after recipient reads." })),
     // Poll
     pollId: Type.Optional(Type.Number({ description: "Poll ID" })),
     title: Type.Optional(Type.String({ description: "Title (polls, reminders, notes)" })),
     options: Type.Optional(Type.Array(Type.String(), { description: "Poll options" })),
     optionId: Type.Optional(Type.Number({ description: "Poll option ID for voting" })),
+    allowMultiChoices: Type.Optional(Type.Boolean({ description: "Allow multiple choices in poll" })),
+    allowAddNewOption: Type.Optional(Type.Boolean({ description: "Allow members to add poll options" })),
+    hideVotePreview: Type.Optional(Type.Boolean({ description: "Hide vote results until user votes" })),
+    isAnonymous: Type.Optional(Type.Boolean({ description: "Anonymous poll (hide voters)" })),
+    expiredTime: Type.Optional(Type.Number({ description: "Poll expiration time in ms (0=no expiration)" })),
     // Reminder
     emoji: Type.Optional(Type.String({ description: "Reminder emoji" })),
     startTime: Type.Optional(Type.Number({ description: "Start time (ms)" })),
@@ -433,7 +449,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.message) throw new Error("threadId and message required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sendMessage({ msg: p.message }, p.threadId, type);
+      const content: any = { msg: p.message };
+      if (p.urgency !== undefined) content.urgency = p.urgency as Urgency;
+      if (p.messageTtl !== undefined) content.ttl = p.messageTtl;
+      const res = await a.sendMessage(content, p.threadId, type);
       return ok({ success: true, msgId: res?.message?.msgId });
     }
 
@@ -451,6 +470,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
       }
       const content: any = { msg };
       if (styles && styles.length > 0) content.styles = styles;
+      if (p.urgency !== undefined) content.urgency = p.urgency as Urgency;
+      if (p.messageTtl !== undefined) content.ttl = p.messageTtl;
       const res = await a.sendMessage(content, p.threadId, type);
       return ok({ success: true, msgId: res?.message?.msgId, stylesApplied: styles?.length ?? 0 });
     }
@@ -573,8 +594,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "forward-message": {
       if (!p.msgId || !p.threadIds?.length) throw new Error("msgId and threadIds required");
       const a = await api();
-      const res = await a.forwardMessage(p.msgId, p.threadIds);
-      return ok({ success: true, result: res });
+      const payload: any = { message: p.message || "" };
+      if (p.messageTtl !== undefined) payload.ttl = p.messageTtl;
+      const res = await a.forwardMessage(payload, p.threadIds);
+      return ok({ success: true, forwarded: res?.success, failed: res?.fail });
     }
 
     case "delete-message": {
@@ -671,7 +694,18 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!res?.uid) return ok({ found: false, phoneNumber: clean });
       return ok({
         found: true,
-        user: { userId: res.uid, displayName: res.display_name || res.zalo_name, avatar: res.avatar },
+        user: {
+          userId: res.uid,
+          displayName: res.display_name || res.zalo_name,
+          zaloName: res.zalo_name,
+          avatar: res.avatar,
+          cover: res.cover,
+          gender: res.gender,
+          dob: res.dob,
+          sdob: res.sdob,
+          status: res.status,
+          globalId: res.globalId,
+        },
       });
     }
 
@@ -684,10 +718,11 @@ async function dispatch(p: Params): Promise<ToolResult> {
 
     case "send-friend-request": {
       if (!p.userId) throw new Error("userId required (numeric)");
+      const uid = await resolveUserId(p.userId);
       const msg = p.requestMessage || "Xin chào!";
       const a = await api();
-      await a.sendFriendRequest(msg, p.userId);
-      return ok({ success: true, userId: p.userId });
+      await a.sendFriendRequest(msg, uid);
+      return ok({ success: true, userId: uid });
     }
 
     case "get-friend-requests": {
@@ -1082,9 +1117,14 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "create-poll": {
       if (!p.threadId || !p.title || !p.options?.length) throw new Error("threadId, title, options required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.createPoll({ question: p.title, options: p.options }, p.threadId);
-      return ok({ success: true, result: res });
+      const pollOpts: any = { question: p.title, options: p.options };
+      if (p.expiredTime !== undefined) pollOpts.expiredTime = p.expiredTime;
+      if (p.allowMultiChoices !== undefined) pollOpts.allowMultiChoices = p.allowMultiChoices;
+      if (p.allowAddNewOption !== undefined) pollOpts.allowAddNewOption = p.allowAddNewOption;
+      if (p.hideVotePreview !== undefined) pollOpts.hideVotePreview = p.hideVotePreview;
+      if (p.isAnonymous !== undefined) pollOpts.isAnonymous = p.isAnonymous;
+      const res = await a.createPoll(pollOpts, p.threadId);
+      return ok({ success: true, poll: res });
     }
 
     case "vote-poll": {
@@ -1401,11 +1441,22 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const profile = info?.profile ?? info;
       return ok({
         userId: profile?.userId ?? ownId,
+        username: profile?.username,
         displayName: profile?.displayName,
         zaloName: profile?.zaloName,
         avatar: profile?.avatar,
+        bgavatar: profile?.bgavatar,
+        cover: profile?.cover,
         phoneNumber: profile?.phoneNumber,
         gender: profile?.gender,
+        dob: profile?.dob,
+        sdob: profile?.sdob,
+        status: profile?.status,
+        bio: profile?.status,
+        globalId: profile?.globalId,
+        isActive: profile?.isActive,
+        accountStatus: profile?.accountStatus,
+        createdTs: profile?.createdTs,
       });
     }
 
@@ -1716,6 +1767,55 @@ async function dispatch(p: Params): Promise<ToolResult> {
         success: true, groupId: gid, requireMention: p.requireMention,
         note: "Restart gateway for changes to take effect",
       });
+    }
+
+    // ── Zalo-level block ───────────────────────────────────────────────────
+
+    case "zalo-block-user": {
+      if (!p.userId) throw new Error("userId required");
+      const uid = await resolveUserId(p.userId);
+      const a = await api();
+      const res = await a.blockUser(uid);
+      return ok({ success: true, userId: uid, result: res });
+    }
+
+    case "zalo-unblock-user": {
+      if (!p.userId) throw new Error("userId required");
+      const uid = await resolveUserId(p.userId);
+      const a = await api();
+      const res = await a.unblockUser(uid);
+      return ok({ success: true, userId: uid, result: res });
+    }
+
+    // ── New APIs ───────────────────────────────────────────────────────────
+
+    case "get-reminder": {
+      if (!p.reminderId) throw new Error("reminderId required");
+      const a = await api();
+      const res = await a.getReminder(p.reminderId);
+      return ok({ reminder: res });
+    }
+
+    case "get-reminder-responses": {
+      if (!p.reminderId) throw new Error("reminderId required");
+      const a = await api();
+      const res = await a.getReminderResponses(p.reminderId);
+      return ok({ reminderId: p.reminderId, acceptMembers: res?.acceptMember, rejectMembers: res?.rejectMember });
+    }
+
+    case "get-friend-board": {
+      if (!p.threadId) throw new Error("threadId required (conversationId)");
+      const a = await api();
+      const res = await a.getFriendBoardList(p.threadId);
+      return ok({ data: res?.data, version: res?.version });
+    }
+
+    case "get-full-avatar": {
+      if (!p.userId) throw new Error("userId required");
+      const uid = await resolveUserId(p.userId);
+      const a = await api();
+      const res = await a.getFullAvatar(uid);
+      return ok({ userId: uid, fullAvatar: res?.full_avatar, backgroundAvatar: res?.bk_full_avatar });
     }
 
     default:
