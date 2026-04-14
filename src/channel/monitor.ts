@@ -463,7 +463,15 @@ async function processMessage(
 
   const dmPolicy = account.config.dmPolicy ?? "open";
   const configAllowFrom = (account.config.allowFrom ?? ["*"]).map((v) => String(v));
-  const rawBody = content.trim();
+
+  // Inject reply/quote context into the message content itself
+  let effectiveContent = content.trim();
+  if (message.quote?.msg) {
+    const quoteSender = message.quote.fromName || message.quote.fromId || "unknown";
+    effectiveContent = `[Replying to ${quoteSender}: "${message.quote.msg}"]\n${effectiveContent}`;
+  }
+
+  const rawBody = effectiveContent;
   const shouldComputeAuth = core.channel.commands.shouldComputeCommandAuthorized(rawBody, config);
   const storeAllowFrom =
     !isGroup && (dmPolicy !== "open" || shouldComputeAuth)
@@ -612,11 +620,7 @@ async function processMessage(
     : rawBody;
 
   // Prepend quoted/replied message context so the AI sees what was replied to
-  if (message.quote?.msg) {
-    const quoteSender = message.quote.fromName || message.quote.fromId || "unknown";
-    bodyWithSender = `[Replying to ${quoteSender}: "${message.quote.msg}"]
-${bodyWithSender}`;
-  }
+  // (quote already injected into rawBody above)
 
   if (bufferedContext.text) {
     bodyWithSender = `[Recent group chat (context only, not addressed to you):\n${bufferedContext.text}\n]\n\n${bodyWithSender}`;
