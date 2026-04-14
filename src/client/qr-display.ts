@@ -1,4 +1,7 @@
 import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import * as crypto from "crypto";
 import qrcode from "qrcode-terminal";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
@@ -21,10 +24,12 @@ async function readQRFromPNG(pngPath: string): Promise<string> {
 }
 
 export async function displayQRFromPNG(base64Image: string): Promise<string> {
-  const pngPath = "/tmp/opclaw-zalo-qr.png";
+  // [L6] Use unique temp file per invocation to prevent multi-instance conflicts
+  const uniqueId = crypto.randomBytes(8).toString("hex");
+  const pngPath = path.join(os.tmpdir(), `opclaw-zalo-qr-${uniqueId}.png`);
   try {
     const buffer = Buffer.from(base64Image, "base64");
-    fs.writeFileSync(pngPath, buffer);
+    fs.writeFileSync(pngPath, buffer, { mode: 0o600 });
     const qrContent = await readQRFromPNG(pngPath);
     console.log("\n");
     qrcode.generate(qrContent, { small: true });
@@ -32,6 +37,8 @@ export async function displayQRFromPNG(base64Image: string): Promise<string> {
     console.log(`\nQR image saved at: ${pngPath}\n`);
     return pngPath;
   } catch (err) {
+    // Cleanup on error
+    try { fs.unlinkSync(pngPath); } catch {}
     throw new Error(`Failed to display QR: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
