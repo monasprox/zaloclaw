@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.1] — 2026-04-14
+
+### Fixed
+- **CI**: regenerate `package-lock.json` with npm 10 to resolve `npm ci` failure (`opusscript@0.0.8` missing from lock file)
+
+### Security
+- **SSRF prevention**: new `safeFetch` wrapper validates all outbound URLs — blocks private/internal IPs (IPv4 + IPv6), embedded credentials, non-HTTP schemes, and DNS rebinding via hostname resolution
+- **Path traversal prevention**: `enforceSandboxPath` enforces lexical containment + symlink verification; all thread operations confined to `~/.openclaw/workspace/threads/`
+- **Local file access whitelist**: `validateLocalFilePath` restricts file operations to `~/.openclaw/workspace/`, `~/.openclaw/media/`, and system temp directories
+- **Credential hardening**: stored credentials now written with `0600` permissions; directories created with `0700`
+- **Output redaction**: lowered minimum secret length from 20 → 8 characters; regex patterns created fresh per call to prevent `lastIndex` race conditions
+- **Race condition fix**: `getApi()` uses promise memoization to prevent concurrent duplicate login attempts
+- **Image download safety**: hash-based filenames, whitelisted extensions, size limit (20 MB), path containment verification
+- **QR code isolation**: unique temp file per invocation (`crypto.randomBytes`) with `0600` permissions
+- **Thread ID sanitization**: ASCII-only alphanumeric/hyphen/underscore, max 100 characters
+
+### Changed
+- **TypeScript strict mode** enabled (`tsconfig.json`)
+- **Tool parameter validation**: all local file paths and outbound URLs validated through safety modules
+
+### Added
+- `src/safety/url-validator.ts` — SSRF-safe fetch with IP validation, DNS resolution, timeout, and size limits
+- `src/types/vendor.d.ts` — type declarations for `qrcode-terminal`, `jsqr`, and `pngjs`
+- Test framework (vitest) with 63 security and regression tests across 5 test files
+- `validateLocalFilePath`, `enforceSandboxPath`, `cleanupOldSandboxes` in thread-sandbox
+- `isPrivateIp`, `validateUrlForOutboundFetch`, `safeFetch` in url-validator
+
+### Fixed
+- `isLocalFilePath` in `send.ts` no longer matches URLs containing path-like substrings — now only matches actual filesystem paths
+
 ## [2.0.0] — 2026-04-14
 
 ### Changed
