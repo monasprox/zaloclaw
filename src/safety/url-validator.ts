@@ -53,8 +53,8 @@ export function isPrivateIp(ip: string): boolean {
     if (lower === "::") return true;
     // fe80::/10 (link-local)
     if (lower.startsWith("fe80:")) return true;
-    // fc00::/7 (unique local)
-    if (lower.startsWith("fc") || lower.startsWith("fd")) return true;
+    // fc00::/7 (unique local — covers both fc and fd prefixes)
+    if (/^f[cd]/i.test(lower)) return true;
     return false;
   }
 

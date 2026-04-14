@@ -45,7 +45,8 @@ export async function downloadImageFromUrl(
 
     // Use safeFetch with SSRF protection and size limits
     // Skip SSRF check for Zalo CDN URLs (they are from the Zalo API itself)
-    const isZaloCdn = /^https:\/\/[^/]*\.(zalo|zadn|zdn)\.(vn|me)\//i.test(url);
+    // Strict hostname matching: must end with .zalo.vn, .zadn.vn, .zdn.vn, etc.
+    const isZaloCdn = /^https:\/\/(?:[a-z0-9-]+\.)*(?:zalo|zadn|zdn)\.(?:vn|me)\//i.test(url);
     const { buffer } = await safeFetch(url, {
       maxSizeBytes: MAX_IMAGE_SIZE_BYTES,
       skipSsrfCheck: isZaloCdn,

@@ -40,6 +40,10 @@ import {
 import { getPendingRequests, removePendingRequest } from "../client/friend-request-store.js";
 import { validateLocalFilePath } from "../safety/thread-sandbox.js";
 import { safeFetch, validateUrlForOutboundFetch } from "../safety/url-validator.js";
+import * as nodeFs from "node:fs";
+import * as nodePath from "node:path";
+import * as nodeOs from "node:os";
+import * as nodeCrypto from "node:crypto";
 
 // ─── Result helper ───────────────────────────────────────────────────────────
 
@@ -518,11 +522,11 @@ async function dispatch(p: Params): Promise<ToolResult> {
       // [H4] Use sendMessage with attachments for proper image display
       if (/^https?:\/\//i.test(p.url)) {
         // Download to temp, then send as attachment
-        const tmpDir = (await import("node:os")).tmpdir();
-        const urlHash = (await import("node:crypto")).createHash("sha256").update(p.url).digest("hex").substring(0, 12);
-        const resolvedTmpPath = (await import("node:path")).join(tmpDir, `zalo-img-${Date.now()}-${urlHash}.jpg`);
+        const tmpDir = nodeOs.tmpdir();
+        const urlHash = nodeCrypto.createHash("sha256").update(p.url).digest("hex").substring(0, 12);
+        const resolvedTmpPath = nodePath.join(tmpDir, `zalo-img-${Date.now()}-${urlHash}.jpg`);
         const { buffer } = await safeFetch(p.url, { maxSizeBytes: 20 * 1024 * 1024 });
-        (await import("node:fs")).writeFileSync(resolvedTmpPath, buffer);
+        nodeFs.writeFileSync(resolvedTmpPath, buffer);
         try {
           const res = await a.sendMessage(
             { msg: p.message || "", attachments: [resolvedTmpPath] },
@@ -530,12 +534,12 @@ async function dispatch(p: Params): Promise<ToolResult> {
           );
           return ok({ success: true, msgId: res?.message?.msgId });
         } finally {
-          try { (await import("node:fs")).unlinkSync(resolvedTmpPath); } catch {}
+          try { nodeFs.unlinkSync(resolvedTmpPath); } catch {}
         }
       }
       // Local file path — validate sandbox
       const validatedPath = validateLocalFilePath(p.url);
-      if (!(await import("node:fs")).existsSync(validatedPath)) throw new Error(`File not found: ${p.url}`);
+      if (!nodeFs.existsSync(validatedPath)) throw new Error(`File not found: ${p.url}`);
       const res = await a.sendMessage(
         { msg: p.message || "", attachments: [validatedPath] },
         p.threadId, type,
@@ -554,26 +558,26 @@ async function dispatch(p: Params): Promise<ToolResult> {
       // [C4] SSRF protection via validateUrlForOutboundFetch
       if (/^https?:\/\//i.test(localFile)) {
         await validateUrlForOutboundFetch(localFile);
-        const tmpDir = (await import("node:os")).tmpdir();
+        const tmpDir = nodeOs.tmpdir();
         const urlObj = new URL(localFile);
         // Use hash-based filename to prevent path injection via URL
-        const urlHash = (await import("node:crypto")).createHash("sha256").update(localFile).digest("hex").substring(0, 12);
+        const urlHash = nodeCrypto.createHash("sha256").update(localFile).digest("hex").substring(0, 12);
         const safeExt = (urlObj.pathname.split("/").pop() || "file").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 50);
-        resolvedPath = (await import("node:path")).join(tmpDir, `zalo-send-${Date.now()}-${urlHash}-${safeExt}`);
+        resolvedPath = nodePath.join(tmpDir, `zalo-send-${Date.now()}-${urlHash}-${safeExt}`);
         const { buffer } = await safeFetch(localFile, { maxSizeBytes: 50 * 1024 * 1024 });
-        (await import("node:fs")).writeFileSync(resolvedPath, buffer);
+        nodeFs.writeFileSync(resolvedPath, buffer);
       } else {
         // [C3] Validate local file path — restrict to sandbox directories
         resolvedPath = validateLocalFilePath(localFile);
       }
-      if (!(await import("node:fs")).existsSync(resolvedPath)) throw new Error(`File not found: ${resolvedPath}`);
+      if (!nodeFs.existsSync(resolvedPath)) throw new Error(`File not found: ${resolvedPath}`);
       const res = await a.sendMessage(
         { msg: p.message || "", attachments: [resolvedPath] },
         p.threadId, type,
       );
       // Cleanup temp file if downloaded from URL
       if (/^https?:\/\//i.test(localFile) && resolvedPath !== localFile) {
-        try { (await import("node:fs")).unlinkSync(resolvedPath); } catch {}
+        try { nodeFs.unlinkSync(resolvedPath); } catch {}
       }
       return ok({ success: true, message: res?.message, attachment: res?.attachment });
     }
