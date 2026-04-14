@@ -104,6 +104,7 @@ const ACTIONS = [
   "send-styled",
   "send-link",
   "send-image",
+  "send-file",
   "send-video",
   "send-voice",
   "send-sticker",
@@ -283,6 +284,7 @@ export const OpclawZaloToolSchema = Type.Object(
     query: Type.Optional(Type.String({ description: "Search / filter query" })),
     // Media
     url: Type.Optional(Type.String({ description: "URL for media/link/image" })),
+    filePath: Type.Optional(Type.String({ description: "Local file path for send-file (e.g. /path/to/file.md)" })),
     thumbnailUrl: Type.Optional(Type.String({ description: "Thumbnail URL (video)" })),
     voiceUrl: Type.Optional(Type.String({ description: "Voice/audio URL" })),
     // Stickers
@@ -470,6 +472,36 @@ async function dispatch(p: Params): Promise<ToolResult> {
         p.threadId, type,
       );
       return ok({ success: true, msgId: res?.msgId });
+    }
+
+    case "send-file": {
+      if (!p.threadId) throw new Error("threadId required");
+      const localFile = p.filePath || p.url;
+      if (!localFile) throw new Error("filePath or url required");
+      const a = await api();
+      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
+      let resolvedPath = localFile;
+      // If it's a URL, download to temp file first
+      if (/^https?:\/\//i.test(localFile)) {
+        const tmpDir = (await import("node:os")).tmpdir();
+        const urlObj = new URL(localFile);
+        const baseName = urlObj.pathname.split("/").pop() || "file";
+        resolvedPath = (await import("node:path")).join(tmpDir, `zalo-send-${Date.now()}-${baseName}`);
+        const resp = await fetch(localFile);
+        if (!resp.ok) throw new Error(`Failed to download file: ${resp.status} ${resp.statusText}`);
+        const buffer = Buffer.from(await resp.arrayBuffer());
+        (await import("node:fs")).writeFileSync(resolvedPath, buffer);
+      }
+      if (!(await import("node:fs")).existsSync(resolvedPath)) throw new Error(`File not found: ${resolvedPath}`);
+      const res = await a.sendMessage(
+        { msg: p.message || "", attachments: [resolvedPath] },
+        p.threadId, type,
+      );
+      // Cleanup temp file if downloaded
+      if (resolvedPath !== localFile) {
+        try { (await import("node:fs")).unlinkSync(resolvedPath); } catch {}
+      }
+      return ok({ success: true, message: res?.message, attachment: res?.attachment });
     }
 
     case "send-video": {
