@@ -66,7 +66,7 @@ openclaw gateway restart
 
 ```bash
 # Show QR code in terminal — scan with Zalo app
-openclaw channels login opclaw-zalo
+openclaw channels login --channel opclaw-zalo
 ```
 
 After scanning, credentials are saved. Subsequent gateway restarts auto-login.
