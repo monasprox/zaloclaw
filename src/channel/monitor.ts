@@ -377,6 +377,13 @@ function convertToOpclawZaloMessage(msg: Message): OpclawZaloMessage | null {
     mediaTypes: mediaTypes.length > 0 ? mediaTypes : undefined,
     mentions: mentions ?? undefined,
     timestamp,
+    quote: quote ? {
+      msg: quote.msg || undefined,
+      fromId: quote.ownerId || undefined,
+      fromName: quote.fromD || undefined,
+      msgId: (quote as any).globalMsgId ? String((quote as any).globalMsgId) : undefined,
+      ts: (quote as any).ts || undefined,
+    } : undefined,
     metadata: {
       isGroup,
       groupId: isGroup ? threadId : undefined,
@@ -603,6 +610,13 @@ async function processMessage(
   let bodyWithSender = isGroup
     ? `[userId: ${senderId}, name: ${resolvedSenderName}]: ${rawBody}`
     : rawBody;
+
+  // Prepend quoted/replied message context so the AI sees what was replied to
+  if (message.quote?.msg) {
+    const quoteSender = message.quote.fromName || message.quote.fromId || "unknown";
+    bodyWithSender = `[Replying to ${quoteSender}: "${message.quote.msg}"]
+${bodyWithSender}`;
+  }
 
   if (bufferedContext.text) {
     bodyWithSender = `[Recent group chat (context only, not addressed to you):\n${bufferedContext.text}\n]\n\n${bodyWithSender}`;

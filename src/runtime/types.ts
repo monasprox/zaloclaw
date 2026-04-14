@@ -80,6 +80,13 @@ export type OpclawZaloMessage = {
   mediaTypes?: string[];
   mentions?: Array<{ uid: string; pos: number; len: number; type: 0 | 1 }>;
   timestamp: number;
+  quote?: {
+    msg?: string;
+    fromId?: string;
+    fromName?: string;
+    msgId?: string;
+    ts?: number;
+  };
   metadata?: {
     isGroup: boolean;
     groupId?: string;
