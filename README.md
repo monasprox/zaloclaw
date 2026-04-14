@@ -16,13 +16,17 @@ Zalo is Vietnam's dominant messaging platform (~75M users) but has no official b
 ## Features
 
 ### Core
-- **130+ Zalo API actions** exposed as agent tools — messaging, friends, groups, polls, reminders, profile, catalogs, notes, settings, and more
+- **147 Zalo API actions** exposed as agent tools — messaging, friends, groups, polls, reminders, profile, catalogs, notes, settings, and more
 - **QR code login** — authenticate via terminal or control panel, credentials auto-persist
 - **DM & Group support** — per-account policies: `open`, `pairing`, `allowlist`, `disabled`
 - **Mention gating** — in groups, bot only responds when @mentioned (configurable per group)
 - **Image processing** — downloads and analyzes images sent with @mention; buffers images from non-mention messages so they're available as context when the bot is mentioned later
 
 ### Message Features
+- **Rich text** — send styled messages with bold, italic, underline, strikethrough, colors (markdown auto-converted)
+- **Urgency** — mark messages as important (`urgency: 1`) or urgent (`urgency: 2`)
+- **Reply/quote context** — when a user replies to a message, the AI receives the quoted message content and sender
+- **File sending** — send any file type (PDF, docs, etc.) via local path or URL
 - **Reaction acknowledgment** — react to incoming messages (configurable: heart, like, haha, etc.)
 - **Quote reply** — reply to specific messages with context threading
 - **Read receipts** — mark messages as read
@@ -180,6 +184,194 @@ All configuration lives in `~/.openclaw/openclaw.json` under `channels.opclaw-za
 
 ---
 
+## Agent Tools
+
+The plugin exposes **147 actions** as a single `opclaw-zalo` agent tool. The agent selects the action by name. Names and group names are auto-resolved to Zalo numeric IDs.
+
+### Messaging (16 actions)
+
+| Action | Description |
+|--------|-------------|
+| `send` | Send text message (supports `urgency` and `messageTtl`) |
+| `send-styled` | Send message with rich text (bold, italic, underline, strike, colors) |
+| `send-link` | Send a URL with preview |
+| `send-image` | Send image by URL |
+| `send-file` | Send any file (PDF, doc, etc.) by local path or URL |
+| `send-video` | Send video by URL |
+| `send-voice` | Send voice message by URL |
+| `send-sticker` | Send sticker by ID or keyword search |
+| `send-card` | Send contact card |
+| `send-bank-card` | Send bank card info |
+| `send-typing` | Send typing indicator |
+| `send-to-stranger` | Send message to non-friend |
+| `forward-message` | Forward message to multiple threads (supports TTL) |
+| `delete-message` | Delete a message |
+| `undo-message` | Recall a sent message |
+| `add-reaction` | React to a message (heart, like, haha, wow, cry, angry) |
+
+### Friends (16 actions)
+
+| Action | Description |
+|--------|-------------|
+| `friends` | List all friends (with search/filter) |
+| `find-user` | Find user by phone number (returns full profile) |
+| `find-user-by-username` | Find user by Zalo username |
+| `send-friend-request` | Send friend request (supports name resolution) |
+| `get-friend-requests` | List pending friend requests |
+| `accept-friend-request` | Accept a friend request |
+| `reject-friend-request` | Reject a friend request |
+| `get-sent-requests` | List sent friend requests |
+| `undo-friend-request` | Cancel a sent friend request |
+| `unfriend` | Remove a friend |
+| `check-friend-status` | Check friend/request status |
+| `set-friend-nickname` | Set nickname for a friend |
+| `remove-friend-nickname` | Remove friend nickname |
+| `get-online-friends` | List online friends |
+| `get-close-friends` | List close friends |
+| `get-friend-recommendations` | Get friend recommendations |
+
+### Groups (22 actions)
+
+| Action | Description |
+|--------|-------------|
+| `groups` | List all groups (with search) |
+| `get-group-info` | Get group details |
+| `create-group` | Create a new group |
+| `add-to-group` | Add members to a group |
+| `remove-from-group` | Remove member from group |
+| `leave-group` | Leave a group |
+| `rename-group` | Rename a group |
+| `add-group-admin` / `remove-group-admin` | Manage group admins |
+| `change-group-owner` | Transfer group ownership |
+| `disperse-group` | Dissolve a group |
+| `update-group-settings` | Update group settings (name lock, msg history, join approval, etc.) |
+| `enable-group-link` / `disable-group-link` / `get-group-link` | Manage group invite links |
+| `get-pending-members` / `review-pending-members` | Manage join requests |
+| `block-group-member` / `unblock-group-member` / `get-group-blocked` | Group member blocking |
+| `get-group-members-info` | Get detailed member info |
+| `join-group-link` / `invite-to-groups` / `get-group-invites` / `join-group-invite` / `delete-group-invite` | Group invitations |
+| `change-group-avatar` | Change group avatar |
+| `upgrade-group-to-community` | Upgrade group to community |
+| `get-group-chat-history` | Get group message history |
+
+### Polls (6 actions)
+
+| Action | Description |
+|--------|-------------|
+| `create-poll` | Create poll (supports `allowMultiChoices`, `allowAddNewOption`, `hideVotePreview`, `isAnonymous`, `expiredTime`) |
+| `vote-poll` | Vote on a poll option |
+| `lock-poll` | Lock a poll |
+| `get-poll-detail` | Get poll details and results |
+| `add-poll-options` | Add new options to a poll |
+| `share-poll` | Share a poll |
+
+### Reminders (6 actions)
+
+| Action | Description |
+|--------|-------------|
+| `create-reminder` | Create a reminder with emoji, time, repeat |
+| `edit-reminder` | Edit an existing reminder |
+| `remove-reminder` | Delete a reminder |
+| `list-reminders` | List reminders in a thread |
+| `get-reminder` | Get full reminder details by ID |
+| `get-reminder-responses` | Get accept/reject member lists for a reminder |
+
+### Conversation Management (16 actions)
+
+| Action | Description |
+|--------|-------------|
+| `mute-conversation` / `unmute-conversation` | Mute/unmute (1h, 4h, forever) |
+| `pin-conversation` / `unpin-conversation` | Pin/unpin conversations |
+| `delete-chat` | Delete a conversation |
+| `hide-conversation` / `unhide-conversation` / `get-hidden-conversations` | Hide/show conversations |
+| `mark-unread` / `unmark-unread` / `get-unread-marks` | Manage unread marks |
+| `set-auto-delete-chat` / `get-auto-delete-chats` | Auto-delete chat (1 day, 7 days, 14 days) |
+| `get-archived-chats` / `update-archived-chat` | Archive/unarchive conversations |
+| `get-mute-status` / `get-pinned-conversations` | Query mute/pin status |
+
+### Quick Messages & Auto-Reply (8 actions)
+
+| Action | Description |
+|--------|-------------|
+| `list-quick-messages` / `add-quick-message` / `remove-quick-message` / `update-quick-message` | Manage quick reply templates |
+| `list-auto-replies` / `create-auto-reply` / `update-auto-reply` / `delete-auto-reply` | Manage auto-reply rules (with scope: everyone, strangers, specific friends) |
+
+### Profile & Account (14 actions)
+
+| Action | Description |
+|--------|-------------|
+| `me` | Get own full profile (username, avatar, cover, bio, phone, gender, dob, globalId, etc.) |
+| `status` | Check authentication status |
+| `get-user-info` | Get user profile info |
+| `last-online` | Check user's last online time |
+| `get-qr` | Get own QR code |
+| `update-profile` | Update name, DOB, gender |
+| `update-profile-bio` | Update bio |
+| `change-avatar` | Change account avatar by URL |
+| `delete-avatar` / `get-avatar-list` / `reuse-avatar` | Manage avatar history |
+| `get-biz-account` | Get business account info |
+| `get-full-avatar` | Get full-size avatar + background avatar |
+| `get-friend-board` | Get friend board list |
+
+### Settings (3 actions)
+
+| Action | Description |
+|--------|-------------|
+| `get-settings` | Get all Zalo settings |
+| `update-setting` | Update a specific setting |
+| `update-active-status` | Toggle online/offline status |
+
+### Stickers & Misc (3 actions)
+
+| Action | Description |
+|--------|-------------|
+| `search-stickers` / `search-sticker-detail` | Search and browse stickers |
+| `parse-link` | Parse URL metadata |
+| `send-report` | Report a user/group |
+
+### Notes & Labels (4 actions)
+
+| Action | Description |
+|--------|-------------|
+| `create-note` / `edit-note` | Create/edit notes in conversations |
+| `get-boards` | Get note boards |
+| `get-labels` | Get contact labels |
+
+### Catalogs & Products (8 actions)
+
+| Action | Description |
+|--------|-------------|
+| `create-catalog` / `update-catalog` / `delete-catalog` / `get-catalogs` | Manage product catalogs |
+| `create-product` / `update-product` / `delete-product` / `get-products` | Manage products |
+
+### Zalo Block (2 actions)
+
+| Action | Description |
+|--------|-------------|
+| `zalo-block-user` | Block user at Zalo platform level |
+| `zalo-unblock-user` | Unblock user at Zalo platform level |
+
+### Bot Config — OpenClaw Layer (13 actions)
+
+| Action | Description |
+|--------|-------------|
+| `block-user` / `unblock-user` | Block/unblock user in bot config |
+| `list-blocked` / `list-allowed` | List blocked/allowed users |
+| `block-user-in-group` / `unblock-user-in-group` | Per-group user blocking |
+| `allow-user-in-group` / `unallow-user-in-group` | Per-group user allowlist |
+| `list-blocked-in-group` / `list-allowed-in-group` | Query per-group lists |
+| `group-mention` | Set require-mention for a group |
+
+### Utility (3 actions)
+
+| Action | Description |
+|--------|-------------|
+| `get-alias-list` | Get friend alias list |
+| `get-related-friend-groups` | Get groups shared with a friend |
+| `get-multi-users-by-phones` | Bulk lookup users by phone numbers |
+
+---
+
 ## Architecture
 
 ```
@@ -209,7 +401,7 @@ opclaw-zalo/
 │   │   └── config-manager.ts   → Runtime config read/write (openclaw.json)
 │   │
 │   ├── tools/                  → Agent tool definitions
-│   │   └── tool.ts             → 130+ action handlers (messaging, groups, etc.)
+│   │   └── tool.ts             → 147 action handlers
 │   │
 │   ├── features/               → Standalone feature modules
 │   │   ├── auto-unsend.ts      → Message recall
@@ -229,7 +421,7 @@ opclaw-zalo/
 │   └── runtime/                → Shared runtime state
 │       ├── runtime.ts          → Runtime environment singleton
 │       ├── types.ts            → TypeScript type definitions
-│       └── status-issues.ts    → Health status reporting for `openclaw status`
+│       └── status-issues.ts    → Health status reporting
 │
 ├── docs/
 │   └── FEATURES.md             → Feature spec & zca-js API notes
@@ -238,11 +430,11 @@ opclaw-zalo/
 │   ├── workflows/ci.yml        → CI: install + typecheck on Node 22/24
 │   └── ISSUE_TEMPLATE/         → Bug report & feature request templates
 │
-├── LICENSE                     → MIT
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── SECURITY.md
 ├── CODE_OF_CONDUCT.md
+├── LICENSE                     → MIT
 └── .editorconfig
 ```
 
@@ -250,34 +442,14 @@ opclaw-zalo/
 
 ```
 Zalo → zca-js event → monitor.ts
+  ├── Quote/reply context extraction (replied message text + sender)
   ├── Access control (deny/allow, DM policy, group policy)
   ├── Mention gating (group: skip if not @mentioned → buffer)
   ├── Image processing (download only if mentioned or DM)
-  ├── Context assembly (sender info, buffered messages, media)
+  ├── Context assembly (sender info, buffered messages, media, quote)
   ├── Envelope formatting → dispatch to OpenClaw agent
   └── Agent response → send.ts → Zalo
 ```
-
----
-
-## Agent Tools
-
-The plugin exposes **130+ actions** as a single `opclaw-zalo` agent tool. The agent selects the action by name. Key categories:
-
-| Category | Actions |
-|----------|---------|
-| **Messaging** | send, send-image, send-video, send-voice, send-sticker, send-link, send-card, delete, undo, forward, react, typing |
-| **Friends** | find-user, send/accept/reject friend request, unfriend, nickname, online-friends |
-| **Groups** | list, create, add/remove members, rename, admin management, settings, join/leave |
-| **Polls** | create, vote, lock, share, add options |
-| **Reminders** | create, edit, remove, list |
-| **Conversation** | mute, pin, archive, auto-delete, mark unread, hide |
-| **Profile** | me, get-user-info, update-profile, change-avatar |
-| **Settings** | get/update settings, active status |
-| **Catalogs** | products, catalogs CRUD |
-| **Bot Config** | block/unblock users, set require-mention, manage access lists |
-
-Names and group names are auto-resolved to Zalo numeric IDs.
 
 ---
 
@@ -312,6 +484,7 @@ No build step — OpenClaw loads `.ts` files directly via its runtime.
 - **Rate limits** — Zalo may throttle or block accounts with high message volume
 - **Session stability** — zca-js sessions may expire; re-login via QR is required when cookies expire
 - **No end-to-end encryption** — messages pass through Zalo's servers as normal
+- **Message TTL** — per-message self-destruct (`messageTtl`) is sent to Zalo API but may not be enforced server-side; use `set-auto-delete-chat` for conversation-level auto-delete
 
 ## License
 
