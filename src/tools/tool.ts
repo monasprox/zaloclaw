@@ -38,6 +38,8 @@ import {
   getGroupRequireMention,
 } from "../config/config-manager.js";
 import { getPendingRequests, removePendingRequest } from "../client/friend-request-store.js";
+import { validateLocalFilePath } from "../safety/thread-sandbox.js";
+import { safeFetch, validateUrlForOutboundFetch } from "../safety/url-validator.js";
 
 // ─── Result helper ───────────────────────────────────────────────────────────
 
@@ -488,11 +490,32 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.url) throw new Error("threadId and url required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sendLink(
-        { link: p.url, msg: p.message || undefined },
+      // [H4] Use sendMessage with attachments for proper image display
+      if (/^https?:\/\//i.test(p.url)) {
+        // Download to temp, then send as attachment
+        const tmpDir = (await import("node:os")).tmpdir();
+        const urlHash = (await import("node:crypto")).createHash("sha256").update(p.url).digest("hex").substring(0, 12);
+        const resolvedTmpPath = (await import("node:path")).join(tmpDir, `zalo-img-${Date.now()}-${urlHash}.jpg`);
+        const { buffer } = await safeFetch(p.url, { maxSizeBytes: 20 * 1024 * 1024 });
+        (await import("node:fs")).writeFileSync(resolvedTmpPath, buffer);
+        try {
+          const res = await a.sendMessage(
+            { msg: p.message || "", attachments: [resolvedTmpPath] },
+            p.threadId, type,
+          );
+          return ok({ success: true, msgId: res?.message?.msgId });
+        } finally {
+          try { (await import("node:fs")).unlinkSync(resolvedTmpPath); } catch {}
+        }
+      }
+      // Local file path — validate sandbox
+      const validatedPath = validateLocalFilePath(p.url);
+      if (!(await import("node:fs")).existsSync(validatedPath)) throw new Error(`File not found: ${p.url}`);
+      const res = await a.sendMessage(
+        { msg: p.message || "", attachments: [validatedPath] },
         p.threadId, type,
       );
-      return ok({ success: true, msgId: res?.msgId });
+      return ok({ success: true, msgId: res?.message?.msgId });
     }
 
     case "send-file": {
@@ -502,24 +525,29 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       let resolvedPath = localFile;
-      // If it's a URL, download to temp file first
+      // If it's a URL, validate for SSRF then download to temp file
+      // [C4] SSRF protection via validateUrlForOutboundFetch
       if (/^https?:\/\//i.test(localFile)) {
+        await validateUrlForOutboundFetch(localFile);
         const tmpDir = (await import("node:os")).tmpdir();
         const urlObj = new URL(localFile);
-        const baseName = urlObj.pathname.split("/").pop() || "file";
-        resolvedPath = (await import("node:path")).join(tmpDir, `zalo-send-${Date.now()}-${baseName}`);
-        const resp = await fetch(localFile);
-        if (!resp.ok) throw new Error(`Failed to download file: ${resp.status} ${resp.statusText}`);
-        const buffer = Buffer.from(await resp.arrayBuffer());
+        // Use hash-based filename to prevent path injection via URL
+        const urlHash = (await import("node:crypto")).createHash("sha256").update(localFile).digest("hex").substring(0, 12);
+        const safeExt = (urlObj.pathname.split("/").pop() || "file").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 50);
+        resolvedPath = (await import("node:path")).join(tmpDir, `zalo-send-${Date.now()}-${urlHash}-${safeExt}`);
+        const { buffer } = await safeFetch(localFile, { maxSizeBytes: 50 * 1024 * 1024 });
         (await import("node:fs")).writeFileSync(resolvedPath, buffer);
+      } else {
+        // [C3] Validate local file path — restrict to sandbox directories
+        resolvedPath = validateLocalFilePath(localFile);
       }
       if (!(await import("node:fs")).existsSync(resolvedPath)) throw new Error(`File not found: ${resolvedPath}`);
       const res = await a.sendMessage(
         { msg: p.message || "", attachments: [resolvedPath] },
         p.threadId, type,
       );
-      // Cleanup temp file if downloaded
-      if (resolvedPath !== localFile) {
+      // Cleanup temp file if downloaded from URL
+      if (/^https?:\/\//i.test(localFile) && resolvedPath !== localFile) {
         try { (await import("node:fs")).unlinkSync(resolvedPath); } catch {}
       }
       return ok({ success: true, message: res?.message, attachment: res?.attachment });
@@ -594,7 +622,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "forward-message": {
       if (!p.msgId || !p.threadIds?.length) throw new Error("msgId and threadIds required");
       const a = await api();
-      const payload: any = { message: p.message || "" };
+      // [H5] Include msgId in the forward payload for correct message forwarding
+      const payload: any = { msgId: p.msgId, message: p.message || "" };
       if (p.messageTtl !== undefined) payload.ttl = p.messageTtl;
       const res = await a.forwardMessage(payload, p.threadIds);
       return ok({ success: true, forwarded: res?.success, failed: res?.fail });
@@ -761,7 +790,13 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.userId) throw new Error("userId required");
       const a = await api();
       const uid = await resolveUserId(p.userId);
-      await a.removeFriend(uid); // undo uses removeFriend before accepted
+      // [M6] Use undoFriendRequest if available, fall back to removeFriend
+      if (typeof a.undoFriendRequest === "function") {
+        await a.undoFriendRequest(uid);
+      } else {
+        // Fallback for older zca-js versions — removeFriend before acceptance cancels the request
+        await a.removeFriend(uid);
+      }
       return ok({ success: true, userId: uid });
     }
 
@@ -1130,7 +1165,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "vote-poll": {
       if (!p.pollId || !p.threadId || p.optionId === undefined) throw new Error("pollId, threadId, optionId required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.votePoll(p.pollId, p.optionId);
       return ok({ success: true, result: res });
     }
@@ -1138,7 +1172,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "lock-poll": {
       if (!p.pollId || !p.threadId) throw new Error("pollId and threadId required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.lockPoll(p.pollId);
       return ok({ success: true, result: res });
     }
@@ -1146,7 +1179,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "get-poll-detail": {
       if (!p.pollId || !p.threadId) throw new Error("pollId and threadId required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.getPollDetail(p.pollId);
       return ok({ poll: res });
     }
@@ -1154,7 +1186,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "add-poll-options": {
       if (!p.pollId || !p.threadId || !p.options?.length) throw new Error("pollId, threadId, options required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.addPollOptions({ pollId: p.pollId, options: p.options.map((o: string) => ({ content: o, voted: false })), votedOptionIds: [] });
       return ok({ success: true, result: res });
     }
@@ -1162,7 +1193,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "share-poll": {
       if (!p.pollId || !p.threadId || !p.threadIds?.length) throw new Error("pollId, threadId, threadIds required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.sharePoll(p.pollId);
       return ok({ success: true, result: res });
     }
@@ -1452,7 +1482,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
         dob: profile?.dob,
         sdob: profile?.sdob,
         status: profile?.status,
-        bio: profile?.status,
+        bio: profile?.bio ?? profile?.description ?? profile?.status,
         globalId: profile?.globalId,
         isActive: profile?.isActive,
         accountStatus: profile?.accountStatus,
@@ -1581,7 +1611,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "create-note": {
       if (!p.threadId || !p.title) throw new Error("threadId and title required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.createNote(
         { title: p.title, pinAct: p.pinAct ?? false },
         p.threadId,
@@ -1592,7 +1621,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "edit-note": {
       if (!p.threadId || !p.topicId) throw new Error("threadId and topicId required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.editNote(
         { topicId: p.topicId, title: p.title ?? "" },
         p.threadId,
@@ -1603,7 +1631,6 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "get-boards": {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
-      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.getListBoard({}, p.threadId);
       return ok({ boards: res });
     }
