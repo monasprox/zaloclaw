@@ -1,9 +1,9 @@
 import type {
-  ChannelOnboardingAdapter,
-  ChannelOnboardingDmPolicy,
-  OpenClawConfig,
-  WizardPrompter,
-} from "openclaw/plugin-sdk/channel-plugin-common";
+  ChannelSetupWizardAdapter,
+  ChannelSetupDmPolicy,
+} from "openclaw/plugin-sdk/setup";
+import type { OpenClawConfig } from "openclaw/plugin-sdk/channel-core";
+import type { WizardPrompter } from "openclaw/plugin-sdk/setup";
 import {
   DEFAULT_ACCOUNT_ID,
   normalizeAccountId,
@@ -262,13 +262,13 @@ async function resolveOpclawZaloGroups(params: {
   }
 }
 
-const dmPolicy: ChannelOnboardingDmPolicy = {
+const dmPolicy: ChannelSetupDmPolicy = {
   label: "Zalo JS",
   channel,
   policyKey: "channels['opclaw-zalo'].dmPolicy",
   allowFromKey: "channels['opclaw-zalo'].allowFrom",
-  getCurrent: (cfg) => (cfg.channels?.['opclaw-zalo']?.dmPolicy ?? "open") as "open",
-  setPolicy: (cfg, policy) => setOpclawZaloDmPolicy(cfg, policy),
+  getCurrent: (cfg, _accountId?) => (cfg.channels?.['opclaw-zalo']?.dmPolicy ?? "open") as "open",
+  setPolicy: (cfg, policy, _accountId?) => setOpclawZaloDmPolicy(cfg, policy),
   promptAllowFrom: async ({ cfg, prompter, accountId }) => {
     const id =
       accountId && normalizeAccountId(accountId)
@@ -312,7 +312,7 @@ async function performQrLogin(prompter: WizardPrompter): Promise<void> {
   }
 }
 
-export const opclawZaloOnboardingAdapter: ChannelOnboardingAdapter = {
+export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
   channel,
   dmPolicy,
   getStatus: async ({ cfg }) => {

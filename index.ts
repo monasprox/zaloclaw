@@ -1,6 +1,6 @@
 import type { AnyAgentTool, OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
-import { opclawZaloDock, opclawZaloPlugin } from "./src/channel/channel.js";
+import { opclawZaloPlugin } from "./src/channel/channel.js";
 import { setOpclawZaloRuntime } from "./src/runtime/runtime.js";
 import { OpclawZaloToolSchema, executeOpclawZaloTool } from "./src/tools/tool.js";
 
@@ -12,7 +12,7 @@ const plugin = {
   register(api: OpenClawPluginApi) {
     setOpclawZaloRuntime(api.runtime);
     // Register channel plugin (for onboarding & gateway)
-    api.registerChannel({ plugin: opclawZaloPlugin, dock: opclawZaloDock });
+    api.registerChannel({ plugin: opclawZaloPlugin });
 
     // Register agent tool
     api.registerTool({

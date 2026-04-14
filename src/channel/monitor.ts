@@ -1,4 +1,4 @@
-import type { OpenClawConfig, MarkdownTableMode, RuntimeEnv } from "openclaw/plugin-sdk/channel-plugin-common";
+import type { OpenClawConfig, MarkdownTableMode, RuntimeEnv } from "openclaw/plugin-sdk/zalouser";
 import { createReplyPrefixOptions, createTypingCallbacks } from "openclaw/plugin-sdk/channel-reply-pipeline";
 import { logTypingFailure, logAckFailure } from "openclaw/plugin-sdk/channel-feedback";
 import { mergeAllowlist, summarizeMapping } from "openclaw/plugin-sdk/allow-from";
@@ -114,12 +114,12 @@ function getQuoteForThread(threadId: string): SendMessageQuote | undefined {
   if (!cached) return undefined;
   return {
     content: cached.content,
-    msgType: cached.msgType,
-    propertyExt: cached.propertyExt ?? {},
+    msgType: String(cached.msgType),
+    propertyExt: cached.propertyExt as SendMessageQuote["propertyExt"],
     uidFrom: cached.uidFrom,
     msgId: cached.msgId,
     cliMsgId: cached.cliMsgId,
-    ts: cached.ts,
+    ts: String(cached.ts),
     ttl: cached.ttl,
   };
 }
@@ -460,7 +460,7 @@ async function processMessage(
   const shouldComputeAuth = core.channel.commands.shouldComputeCommandAuthorized(rawBody, config);
   const storeAllowFrom =
     !isGroup && (dmPolicy !== "open" || shouldComputeAuth)
-      ? await core.channel.pairing.readAllowFromStore("opclaw-zalo").catch(() => [])
+      ? await core.channel.pairing.readAllowFromStore({ channel: "opclaw-zalo", accountId: account.accountId }).catch(() => [])
       : [];
   const effectiveAllowFrom = [...configAllowFrom, ...storeAllowFrom];
   const useAccessGroups = config.commands?.useAccessGroups !== false;
@@ -485,6 +485,7 @@ async function processMessage(
           const { code, created } = await core.channel.pairing.upsertPairingRequest({
             channel: "opclaw-zalo",
             id: senderId,
+            accountId: account.accountId,
             meta: { name: senderName || undefined },
           });
           if (created) {
