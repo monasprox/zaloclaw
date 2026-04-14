@@ -531,7 +531,6 @@ async function processMessage(
   const hasControlCommand = core.channel.commands.isControlCommandMessage(rawBody, config);
 
   if (isGroup && resolvedRequireMention) {
-    const hasMedia = (message.mediaUrls?.length ?? 0) > 0;
     const mentionGate = resolveMentionGatingWithBypass({
       isGroup: true,
       requireMention: true,
@@ -542,7 +541,7 @@ async function processMessage(
       commandAuthorized: commandAuthorized === true,
     });
 
-    if (mentionGate.shouldSkip && !hasMedia) {
+    if (mentionGate.shouldSkip) {
       const resolvedName = senderName || await resolveUserName(senderId);
       // Download media for buffered messages too, so they're available when bot is mentioned later
       let bufferedLocalPaths: string[] | undefined;
@@ -643,9 +642,11 @@ async function processMessage(
     }
   }
 
-  // Download media URLs to local files for native image support
+  // Only process images in DMs or when bot was mentioned in groups
+  const shouldProcessImages = !isGroup || wasMentioned;
+
   let localMediaPaths: string[] | undefined;
-  if (message.mediaUrls && message.mediaUrls.length > 0) {
+  if (shouldProcessImages && message.mediaUrls && message.mediaUrls.length > 0) {
     console.log(`[opclaw-zalo] Downloading ${message.mediaUrls.length} images for native image support...`);
     const downloadedPaths = await downloadImagesFromUrls(message.mediaUrls);
     localMediaPaths = downloadedPaths.filter((p): p is string => p !== undefined);
@@ -653,12 +654,14 @@ async function processMessage(
     if (localMediaPaths.length > 0) {
       console.log(`[opclaw-zalo] Downloaded ${localMediaPaths.length} images → ${localMediaPaths.join(", ")}`);
     }
+  } else if (!shouldProcessImages && message.mediaUrls && message.mediaUrls.length > 0) {
+    logVerbose(core, runtime, `Skipping ${message.mediaUrls.length} image(s) in group ${chatId} (not mentioned)`);
   }
 
   // Merge buffered media paths from previous group messages (images sent before @mention)
   const allMediaPaths = [
     ...(localMediaPaths ?? []),
-    ...bufferedMediaPaths,
+    ...(shouldProcessImages ? bufferedMediaPaths : []),
   ];
   if (allMediaPaths.length > (localMediaPaths?.length ?? 0) && bufferedMediaPaths.length > 0) {
     console.log(`[opclaw-zalo] Injecting ${bufferedMediaPaths.length} buffered image(s) from group context`);
@@ -667,10 +670,12 @@ async function processMessage(
 
   // Append media to body - use LOCAL paths if downloaded, otherwise URLs
   let bodyForEnvelope = bodyWithSender;
-  const mediaPathsForBody = effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : message.mediaUrls;
-  if (mediaPathsForBody && mediaPathsForBody.length > 0) {
-    const mediaInfo = mediaPathsForBody.map((p, idx) => `[Image ${idx + 1}: ${p}]`).join('\n');
-    bodyForEnvelope = `${bodyWithSender}\n\n${mediaInfo}`;
+  if (shouldProcessImages) {
+    const mediaPathsForBody = effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : message.mediaUrls;
+    if (mediaPathsForBody && mediaPathsForBody.length > 0) {
+      const mediaInfo = mediaPathsForBody.map((p, idx) => `[Image ${idx + 1}: ${p}]`).join('\n');
+      bodyForEnvelope = `${bodyWithSender}\n\n${mediaInfo}`;
+    }
   }
 
   const body = core.channel.reply.formatAgentEnvelope({
@@ -701,12 +706,12 @@ async function processMessage(
     OriginatingChannel: "opclaw-zalo",
     OriginatingTo: `'opclaw-zalo':${chatId}`,
     WasMentioned: wasMentioned || undefined,
-    // MediaPaths = local file paths (downloaded + buffered), MediaUrls = remote URLs fallback
-    MediaPaths: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : undefined,
-    MediaPath: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths[0] : undefined,
-    MediaUrls: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : message.mediaUrls,
-    MediaUrl: effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : message.mediaUrls?.[0],
-    MediaTypes: message.mediaTypes,
+    // Only attach media when mentioned (groups) or in DMs
+    MediaPaths: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : undefined,
+    MediaPath: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths[0] : undefined,
+    MediaUrls: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : (shouldProcessImages ? message.mediaUrls : undefined),
+    MediaUrl: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : (shouldProcessImages ? message.mediaUrls?.[0] : undefined),
+    MediaTypes: shouldProcessImages ? message.mediaTypes : undefined,
   });
 
   await core.channel.session.recordInboundSession({

@@ -1,11 +1,11 @@
-import { getApi, getCurrentUid } from "./zalo-client.js";
+import { getApiSync, getCurrentUid } from "./zalo-client.js";
 
 export interface StatusIssue {
   severity: "error" | "warning" | "info";
   message: string;
 }
 
-export async function collectOpclawZaloStatusIssues(): Promise<StatusIssue[]> {
+export function collectOpclawZaloStatusIssues(): StatusIssue[] {
   const issues: StatusIssue[] = [];
 
   const uid = getCurrentUid();
@@ -14,19 +14,13 @@ export async function collectOpclawZaloStatusIssues(): Promise<StatusIssue[]> {
     return issues;
   }
 
-  try {
-    const api = await getApi();
-    const userInfo = await api.getUserInfo(uid);
-    const profile = (userInfo as any)?.changed_profiles?.[uid];
-    if (!profile) {
-      issues.push({ severity: "warning", message: "OpenClaw Zalo: could not fetch profile" });
-    }
-  } catch (err) {
-    issues.push({ severity: "error", message: `OpenClaw Zalo API error: ${String(err)}` });
+  const api = getApiSync();
+  if (!api) {
+    issues.push({ severity: "warning", message: "OpenClaw Zalo: API not initialized" });
+    return issues;
   }
 
   try {
-    const api = await getApi();
     const ctx = api.getContext();
     const settings = ctx?.settings;
     if (settings?.features?.webChat === false) {
