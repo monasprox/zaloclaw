@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/channel-plugin-common";
+import type { OpenClawConfig } from "openclaw/plugin-sdk/channel-core";
 import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/channel-plugin-common";
 import type { ResolvedOpclawZaloAccount, OpclawZaloAccountConfig, OpclawZaloConfig } from "../runtime/types.js";
 import { hasStoredCredentials } from "./zalo-client.js";

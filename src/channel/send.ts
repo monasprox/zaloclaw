@@ -151,11 +151,11 @@ async function sendMediaOpclawZalo(
     const api = await getApi();
     const type = options.isGroup ? ThreadType.Group : ThreadType.User;
     const result = await api.sendLink(
-      { url: mediaUrl.trim(), title: options.caption || mediaUrl.trim() },
+      { link: mediaUrl.trim(), msg: options.caption || undefined },
       threadId.trim(),
       type,
     );
-    const msgId = result?.message?.msgId;
+    const msgId = result?.msgId;
     return { ok: true, messageId: msgId != null ? String(msgId) : undefined };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -172,8 +172,8 @@ export async function sendLinkOpclawZalo(
   try {
     const api = await getApi();
     const type = options.isGroup ? ThreadType.Group : ThreadType.User;
-    const result = await api.sendLink({ url: url.trim() }, threadId.trim(), type);
-    const msgId = result?.message?.msgId;
+    const result = await api.sendLink({ link: url.trim() }, threadId.trim(), type);
+    const msgId = result?.msgId;
     return { ok: true, messageId: msgId != null ? String(msgId) : undefined };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };

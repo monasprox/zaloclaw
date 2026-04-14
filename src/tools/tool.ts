@@ -16,8 +16,9 @@ import {
   MuteAction,
   MuteDuration,
   UpdateSettingsType,
+  AutoReplyScope,
 } from "zca-js";
-import { getApi } from "../client/zalo-client.js";
+import { getApi, getCurrentUid } from "../client/zalo-client.js";
 import { lookupCliMsgId } from "../features/msg-id-store.js";
 import {
   readOpenClawConfig,
@@ -338,7 +339,8 @@ export const OpclawZaloToolSchema = Type.Object(
     // Quick message / auto-reply
     replyId: Type.Optional(Type.Number({ description: "Auto-reply rule ID" })),
     itemId: Type.Optional(Type.Number({ description: "Quick message item ID" })),
-    scope: Type.Optional(Type.Number({ description: "Auto-reply scope (0=all)" })),
+    scope: Type.Optional(Type.Number({ description: "Auto-reply scope (0=Everyone, 1=Stranger, 2=SpecificFriends, 3=FriendsExcept)" })),
+    isEnable: Type.Optional(Type.Boolean({ description: "Enable/disable auto-reply rule" })),
     // Settings
     settingKey: Type.Optional(Type.String({ description: "Setting key" })),
     settingValue: Type.Optional(Type.Number({ description: "Setting value (0=off, 1=on)" })),
@@ -455,8 +457,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.url) throw new Error("threadId and url required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sendLink({ url: p.url }, p.threadId, type);
-      return ok({ success: true, msgId: res?.message?.msgId });
+      const res = await a.sendLink({ link: p.url }, p.threadId, type);
+      return ok({ success: true, msgId: res?.msgId });
     }
 
     case "send-image": {
@@ -464,17 +466,17 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.sendLink(
-        { url: p.url, title: p.message || p.url },
+        { link: p.url, msg: p.message || undefined },
         p.threadId, type,
       );
-      return ok({ success: true, msgId: res?.message?.msgId });
+      return ok({ success: true, msgId: res?.msgId });
     }
 
     case "send-video": {
       if (!p.threadId || !p.url) throw new Error("threadId and url required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sendVideo(p.url, p.thumbnailUrl ?? p.url, p.threadId, type);
+      const res = await a.sendVideo({ videoUrl: p.url, thumbnailUrl: p.thumbnailUrl ?? p.url }, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -484,7 +486,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!voiceUrl) throw new Error("voiceUrl or url required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sendVoice(voiceUrl, p.threadId, type);
+      const res = await a.sendVoice({ voiceUrl }, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -512,7 +514,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const a = await api();
       const uid = await resolveUserId(p.userId);
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sendCard(uid, p.threadId, type);
+      const res = await a.sendCard({ userId: uid }, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -547,7 +549,16 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.msgId || !p.threadId) throw new Error("msgId and threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.deleteMessage(p.msgId, p.threadId, type, Boolean(p.onlyMe));
+      let cliMsgId = p.cliMsgId as string | undefined;
+      if (!cliMsgId) {
+        const stored = lookupCliMsgId(p.msgId);
+        if (stored) cliMsgId = stored.cliMsgId;
+      }
+      const uidFrom = getCurrentUid() ?? "";
+      const res = await a.deleteMessage(
+        { data: { msgId: p.msgId, cliMsgId: cliMsgId ?? p.msgId, uidFrom }, threadId: p.threadId, type },
+        Boolean(p.onlyMe),
+      );
       return ok({ success: true, result: res });
     }
 
@@ -560,7 +571,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
       }
       if (!undoCliMsgId) throw new Error("cliMsgId not found — message may be too old");
       const a = await api();
-      const res = await a.undo({ msgId: p.msgId, cliMsgId: undoCliMsgId });
+      const stored = lookupCliMsgId(p.msgId);
+      const undoThreadId = p.threadId ?? stored?.threadId ?? "";
+      const undoType = stored?.isGroup ? ThreadType.Group : ThreadType.User;
+      const res = await a.undo({ msgId: p.msgId, cliMsgId: undoCliMsgId }, undoThreadId, undoType);
       return ok({ success: true, result: res });
     }
 
@@ -745,8 +759,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "get-related-friend-groups": {
+      if (!p.userId) throw new Error("userId required");
+      const uid = await resolveUserId(p.userId);
       const a = await api();
-      const res = await a.getRelatedFriendGroup();
+      const res = await a.getRelatedFriendGroup(uid);
       return ok({ groups: res });
     }
 
@@ -813,7 +829,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.groupName || !p.memberIds?.length) throw new Error("groupName and memberIds required");
       const a = await api();
       const ids = await Promise.all(p.memberIds.map(resolveUserId));
-      const res = await a.createGroup(p.groupName, ids);
+      const res = await a.createGroup({ name: p.groupName, members: ids });
       return ok({ success: true, result: res });
     }
 
@@ -822,7 +838,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const gid = await resolveGroupId(p.groupId);
       const a = await api();
       const ids = await Promise.all(p.memberIds.map(resolveUserId));
-      const res = await a.addUserToGroup(gid, ids);
+      const res = await a.addUserToGroup(ids, gid);
       return ok({ success: true, result: res });
     }
 
@@ -831,7 +847,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const gid = await resolveGroupId(p.groupId);
       const uid = await resolveUserId(p.userId);
       const a = await api();
-      const res = await a.removeUserFromGroup(gid, uid);
+      const res = await a.removeUserFromGroup(uid, gid);
       return ok({ success: true, result: res });
     }
 
@@ -890,7 +906,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.groupId || !p.groupSettings) throw new Error("groupId and groupSettings required");
       const gid = await resolveGroupId(p.groupId);
       const a = await api();
-      const res = await a.updateGroupSettings(gid, p.groupSettings);
+      const res = await a.updateGroupSettings(p.groupSettings, gid);
       return ok({ success: true, result: res });
     }
 
@@ -931,7 +947,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
         throw new Error("groupId, memberIds, and isApprove required");
       const gid = await resolveGroupId(p.groupId);
       const a = await api();
-      const res = await a.reviewPendingMemberRequest(gid, p.memberIds, p.isApprove);
+      const res = await a.reviewPendingMemberRequest({ members: p.memberIds, isApprove: p.isApprove }, gid);
       return ok({ success: true, result: res });
     }
 
@@ -939,7 +955,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.groupId) throw new Error("groupId required");
       const gid = await resolveGroupId(p.groupId);
       const a = await api();
-      const res = await a.getGroupBlockedMember(gid);
+      const res = await a.getGroupBlockedMember({}, gid);
       return ok({ result: res });
     }
 
@@ -994,7 +1010,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "join-group-invite": {
       if (!p.groupId) throw new Error("groupId required");
       const a = await api();
-      const res = await a.joinGroupInviteBox(p.groupId, p.blockFutureInvite ?? false);
+      const res = await a.joinGroupInviteBox(p.groupId);
       return ok({ success: true, result: res });
     }
 
@@ -1035,7 +1051,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.title || !p.options?.length) throw new Error("threadId, title, options required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.createPoll(p.title, p.options, p.threadId, type);
+      const res = await a.createPoll({ question: p.title, options: p.options }, p.threadId);
       return ok({ success: true, result: res });
     }
 
@@ -1043,7 +1059,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.pollId || !p.threadId || p.optionId === undefined) throw new Error("pollId, threadId, optionId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.votePoll(p.pollId, [p.optionId], p.threadId, type);
+      const res = await a.votePoll(p.pollId, p.optionId);
       return ok({ success: true, result: res });
     }
 
@@ -1051,7 +1067,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.pollId || !p.threadId) throw new Error("pollId and threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.lockPoll(p.pollId, p.threadId, type);
+      const res = await a.lockPoll(p.pollId);
       return ok({ success: true, result: res });
     }
 
@@ -1059,7 +1075,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.pollId || !p.threadId) throw new Error("pollId and threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.getPollDetail(p.pollId, p.threadId, type);
+      const res = await a.getPollDetail(p.pollId);
       return ok({ poll: res });
     }
 
@@ -1067,7 +1083,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.pollId || !p.threadId || !p.options?.length) throw new Error("pollId, threadId, options required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.addPollOptions(p.pollId, p.options, p.threadId, type);
+      const res = await a.addPollOptions({ pollId: p.pollId, options: p.options.map((o: string) => ({ content: o, voted: false })), votedOptionIds: [] });
       return ok({ success: true, result: res });
     }
 
@@ -1075,7 +1091,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.pollId || !p.threadId || !p.threadIds?.length) throw new Error("pollId, threadId, threadIds required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sharePoll(p.pollId, p.threadId, type, p.threadIds);
+      const res = await a.sharePoll(p.pollId);
       return ok({ success: true, result: res });
     }
 
@@ -1085,10 +1101,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.title || !p.startTime) throw new Error("threadId, title, startTime required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.createReminder(p.threadId, type, {
-        title: p.title, time: p.startTime, emoji: p.emoji,
-        repeat: p.repeat ?? 0, memberIds: p.memberIds ?? [],
-      });
+      const res = await a.createReminder(
+        { title: p.title, startTime: p.startTime, emoji: p.emoji, repeat: p.repeat },
+        p.threadId, type,
+      );
       return ok({ success: true, result: res });
     }
 
@@ -1104,10 +1120,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.reminderId || !p.threadId) throw new Error("reminderId and threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.editReminder(p.reminderId, p.threadId, type, {
-        title: p.title, time: p.startTime, emoji: p.emoji,
-        repeat: p.repeat, memberIds: p.memberIds,
-      });
+      const res = await a.editReminder(
+        { title: p.title, topicId: p.reminderId, startTime: p.startTime, emoji: p.emoji, repeat: p.repeat },
+        p.threadId, type,
+      );
       return ok({ success: true, result: res });
     }
 
@@ -1115,7 +1131,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.getListReminder(p.threadId, type);
+      const res = await a.getListReminder({}, p.threadId, type);
       return ok({ reminders: res });
     }
 
@@ -1129,7 +1145,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
         : p.duration === 3600 ? MuteDuration.ONE_HOUR
         : p.duration === 14400 ? MuteDuration.FOUR_HOURS
         : MuteDuration.FOREVER;
-      const res = await a.setMute(MuteAction.MUTE, d, p.threadId, type);
+      const res = await a.setMute({ action: MuteAction.MUTE, duration: d }, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -1137,7 +1153,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.setMute(MuteAction.UNMUTE, MuteDuration.FOREVER, p.threadId, type);
+      const res = await a.setMute({ action: MuteAction.UNMUTE }, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -1145,21 +1161,15 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const pins = await a.getPinConversations();
-      const pinList = Array.isArray(pins) ? pins : [];
-      pinList.push({ threadId: p.threadId, type });
-      const res = await a.setPinnedConversations(pinList);
+      const res = await a.setPinnedConversations(true, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
     case "unpin-conversation": {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
-      const pins = await a.getPinConversations();
-      const filtered = (Array.isArray(pins) ? pins : []).filter(
-        (pin: any) => String(pin.threadId) !== String(p.threadId),
-      );
-      const res = await a.setPinnedConversations(filtered);
+      const type = p.isGroup ? ThreadType.Group : ThreadType.User;
+      const res = await a.setPinnedConversations(false, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -1167,7 +1177,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.deleteChat(p.threadId, type);
+      const res = await a.deleteChat({ ownerId: getCurrentUid() ?? "", cliMsgId: "", globalMsgId: "" }, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -1175,7 +1185,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.setHiddenConversations([{ threadId: p.threadId, type }]);
+      const res = await a.setHiddenConversations(true, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -1183,7 +1193,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.setHiddenConversations([{ threadId: p.threadId, type, unhide: true }] as any);
+      const res = await a.setHiddenConversations(false, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -1219,7 +1229,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || p.ttl === undefined) throw new Error("threadId and ttl required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.updateAutoDeleteChat(p.threadId, type, p.ttl);
+      const res = await a.updateAutoDeleteChat(p.ttl, p.threadId, type);
       return ok({ success: true, result: res });
     }
 
@@ -1239,7 +1249,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || p.isArchived === undefined) throw new Error("threadId and isArchived required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.updateArchivedChatList(p.threadId, type, p.isArchived);
+      const res = await a.updateArchivedChatList(p.isArchived, { id: p.threadId, type });
       return ok({ success: true, result: res });
     }
 
@@ -1266,7 +1276,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "add-quick-message": {
       if (!p.keyword || !p.message) throw new Error("keyword and message required");
       const a = await api();
-      const res = await a.addQuickMessage(p.keyword, p.message);
+      const res = await a.addQuickMessage({ keyword: p.keyword, title: p.message });
       return ok({ success: true, result: res });
     }
 
@@ -1280,7 +1290,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "update-quick-message": {
       if (p.itemId === undefined || !p.keyword || !p.message) throw new Error("itemId, keyword, message required");
       const a = await api();
-      const res = await a.updateQuickMessage(p.itemId, p.keyword, p.message);
+      const res = await a.updateQuickMessage({ keyword: p.keyword, title: p.message }, p.itemId);
       return ok({ success: true, result: res });
     }
 
@@ -1291,17 +1301,32 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "create-auto-reply": {
-      if (!p.keyword || !p.message) throw new Error("keyword and message required");
+      if (!p.message || p.startTime === undefined || p.endTime === undefined) throw new Error("message, startTime, endTime required");
       const a = await api();
-      const res = await a.createAutoReply(p.keyword, p.message, p.scope ?? 0);
+      const res = await a.createAutoReply({
+        content: p.message,
+        isEnable: p.isEnable ?? true,
+        startTime: p.startTime,
+        endTime: p.endTime,
+        scope: (p.scope ?? 0) as AutoReplyScope,
+        uids: p.memberIds,
+      });
       return ok({ success: true, result: res });
     }
 
     case "update-auto-reply": {
-      if (p.replyId === undefined || !p.keyword || !p.message)
-        throw new Error("replyId, keyword, message required");
+      if (p.replyId === undefined || !p.message || p.startTime === undefined || p.endTime === undefined)
+        throw new Error("replyId, message, startTime, endTime required");
       const a = await api();
-      const res = await a.updateAutoReply(p.replyId, p.keyword, p.message, p.scope ?? 0);
+      const res = await a.updateAutoReply({
+        id: p.replyId,
+        content: p.message,
+        isEnable: p.isEnable ?? true,
+        startTime: p.startTime,
+        endTime: p.endTime,
+        scope: (p.scope ?? 0) as AutoReplyScope,
+        uids: p.memberIds,
+      });
       return ok({ success: true, result: res });
     }
 
@@ -1376,7 +1401,9 @@ async function dispatch(p: Params): Promise<ToolResult> {
 
     case "get-qr": {
       const a = await api();
-      const res = await a.getQR();
+      const uid = getCurrentUid();
+      if (!uid) throw new Error("Not logged in");
+      const res = await a.getQR(uid);
       return ok({ qr: res });
     }
 
@@ -1405,8 +1432,9 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "delete-avatar": {
+      if (!p.photoId) throw new Error("photoId required");
       const a = await api();
-      const res = await a.deleteAvatar();
+      const res = await a.deleteAvatar(p.photoId);
       return ok({ success: true, result: res });
     }
 
@@ -1424,8 +1452,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "get-biz-account": {
+      if (!p.userId) throw new Error("userId required");
+      const uid = await resolveUserId(p.userId);
       const a = await api();
-      const res = await a.getBizAccount();
+      const res = await a.getBizAccount(uid);
       return ok({ bizAccount: res });
     }
 
@@ -1456,7 +1486,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.sendReport(p.threadId, type, p.reason ?? 0, p.message ?? "");
+      const res = await a.sendReport(
+        p.reason && p.reason !== 0 ? { reason: p.reason as any } : { reason: 0, content: p.message ?? "" },
+        p.threadId, type,
+      );
       return ok({ success: true, result: res });
     }
 
@@ -1466,10 +1499,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.title) throw new Error("threadId and title required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.createNote(p.threadId, type, {
-        title: p.title,
-        pinAct: p.pinAct ?? false,
-      });
+      const res = await a.createNote(
+        { title: p.title, pinAct: p.pinAct ?? false },
+        p.threadId,
+      );
       return ok({ success: true, result: res });
     }
 
@@ -1477,10 +1510,10 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.topicId) throw new Error("threadId and topicId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.editNote(p.threadId, type, {
-        topicId: p.topicId,
-        title: p.title,
-      });
+      const res = await a.editNote(
+        { topicId: p.topicId, title: p.title ?? "" },
+        p.threadId,
+      );
       return ok({ success: true, result: res });
     }
 
@@ -1488,7 +1521,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.getListBoard(p.threadId, type);
+      const res = await a.getListBoard({}, p.threadId);
       return ok({ boards: res });
     }
 
@@ -1510,7 +1543,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "update-catalog": {
       if (!p.catalogId || !p.name) throw new Error("catalogId and name required");
       const a = await api();
-      const res = await a.updateCatalog(p.catalogId, p.name);
+      const res = await a.updateCatalog({ catalogId: p.catalogId, catalogName: p.name });
       return ok({ success: true, result: res });
     }
 
@@ -1551,15 +1584,16 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "delete-product": {
-      if (!p.productId) throw new Error("productId required");
+      if (!p.productId || !p.catalogId) throw new Error("productId and catalogId required");
       const a = await api();
-      const res = await a.deleteProductCatalog(p.productId);
+      const res = await a.deleteProductCatalog({ productIds: p.productId, catalogId: p.catalogId });
       return ok({ success: true, result: res });
     }
 
     case "get-products": {
+      if (!p.catalogId) throw new Error("catalogId required");
       const a = await api();
-      const res = await a.getProductCatalogList();
+      const res = await a.getProductCatalogList({ catalogId: p.catalogId });
       return ok({ products: res });
     }
 

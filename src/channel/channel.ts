@@ -1,12 +1,12 @@
 import type {
   ChannelAccountSnapshot,
   ChannelDirectoryEntry,
-  ChannelDock,
   ChannelGroupContext,
-  ChannelPlugin,
-  OpenClawConfig,
-  GroupToolPolicyConfig,
-} from "openclaw/plugin-sdk/channel-plugin-common";
+  ChannelStatusIssue,
+} from "openclaw/plugin-sdk/channel-contract";
+import type { ChannelPlugin } from "openclaw/plugin-sdk/channel-plugin-common";
+import type { OpenClawConfig } from "openclaw/plugin-sdk/channel-core";
+import type { GroupToolPolicyConfig } from "openclaw/plugin-sdk/channel-policy";
 import {
   applyAccountNameToChannelSection,
   DEFAULT_ACCOUNT_ID,
@@ -110,39 +110,11 @@ function resolveOpclawZaloGroupToolPolicy(
   return undefined;
 }
 
-export const opclawZaloDock: ChannelDock = {
-  id: "opclaw-zalo",
-  capabilities: {
-    chatTypes: ["direct", "group"],
-    media: true,
-    blockStreaming: true,
-  },
-  outbound: { textChunkLimit: 2000 },
-  config: {
-    resolveAllowFrom: ({ cfg, accountId }) =>
-      (resolveOpclawZaloAccountSync({ cfg, accountId }).config.allowFrom ?? []).map((entry) =>
-        String(entry),
-      ),
-    formatAllowFrom: ({ allowFrom }) =>
-      allowFrom
-        .map((entry) => String(entry).trim())
-        .filter(Boolean)
-        .map((entry) => entry.replace(/^(opclaw-zalo|oz):/i, ""))
-        .map((entry) => entry.toLowerCase()),
-  },
-  groups: {
-    resolveRequireMention: resolveOpclawZaloGroupRequireMention,
-    resolveToolPolicy: resolveOpclawZaloGroupToolPolicy,
-  },
-  threading: {
-    resolveReplyToMode: () => "off",
-  },
-};
 
 export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
   id: "opclaw-zalo",
   meta,
-  onboarding: opclawZaloOnboardingAdapter,
+  setupWizard: opclawZaloOnboardingAdapter,
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
@@ -559,7 +531,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       lastStopAt: null,
       lastError: null,
     },
-    collectStatusIssues: collectOpclawZaloStatusIssues,
+    collectStatusIssues: (_accounts) => collectOpclawZaloStatusIssues(),
     buildChannelSummary: ({ snapshot }) => ({
       configured: snapshot.configured ?? false,
       running: snapshot.running ?? false,
@@ -569,7 +541,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       probe: snapshot.probe,
       lastProbeAt: snapshot.lastProbeAt ?? null,
     }),
-    probeAccount: async ({ account, timeoutMs }) => probeOpclawZalo(timeoutMs),
+    probeAccount: async ({ account }) => probeOpclawZalo(),
     buildAccountSnapshot: async ({ account, runtime }) => {
       const configured = hasStoredCredentials();
       return {
