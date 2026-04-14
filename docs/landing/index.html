@@ -3,31 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenClaw Zalo Plugin — AI-Powered Zalo Automation</title>
-  <meta name="description" content="Connect your Zalo personal account to OpenClaw's AI agent framework. 147 API actions, QR login, group & DM support. Open source.">
+  <title>OpenClaw Zalo — Automate Zalo with AI</title>
+  <meta name="description" content="Control personal Zalo accounts, automate messages, run tools, and build real workflows — without SDK hell or reverse engineering.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #0a0a0f;
-      --bg-card: rgba(255,255,255,0.04);
-      --bg-card-hover: rgba(255,255,255,0.07);
-      --border: rgba(255,255,255,0.08);
-      --border-hover: rgba(255,255,255,0.14);
-      --text: #e4e4e7;
-      --text-dim: #a1a1aa;
-      --text-dimmer: #71717a;
-      --accent: #22c55e;
-      --accent-hover: #16a34a;
-      --accent-glow: rgba(34,197,94,0.15);
-      --blue: #3b82f6;
-      --blue-dim: rgba(59,130,246,0.12);
-      --purple: #a78bfa;
-      --purple-dim: rgba(167,139,250,0.12);
-      --orange: #f97316;
-      --orange-dim: rgba(249,115,22,0.12);
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif;
-      --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --bg: #ffffff;
+      --bg-subtle: #f8f9fb;
+      --bg-muted: #f1f3f5;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --text: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #6b7280;
+      --text-faint: #9ca3af;
+      --accent: #0d9f5f;
+      --accent-hover: #0b8a52;
+      --accent-bg: #ecfdf5;
+      --accent-border: #a7f3d0;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --purple: #7c3aed;
+      --purple-bg: #f5f3ff;
+      --orange: #ea580c;
+      --orange-bg: #fff7ed;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', ui-monospace, Menlo, Monaco, Consolas, monospace;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+      --radius: 12px;
     }
 
     html { scroll-behavior: smooth; }
@@ -41,150 +52,66 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Layout ── */
     .container {
-      max-width: 1080px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 0 24px;
-    }
-
-    section {
-      padding: 80px 0;
-    }
-
-    section + section {
-      border-top: 1px solid var(--border);
     }
 
     /* ── Nav ── */
     nav {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       z-index: 100;
-      background: rgba(10,10,15,0.85);
-      backdrop-filter: blur(16px);
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 0 24px;
     }
 
     nav .inner {
-      max-width: 1080px;
+      max-width: 960px;
       margin: 0 auto;
+      padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 56px;
+      height: 52px;
     }
 
-    nav .logo {
+    .logo {
       font-weight: 700;
       font-size: 15px;
-      letter-spacing: -0.3px;
       color: var(--text);
       text-decoration: none;
+      letter-spacing: -0.3px;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .nav-links {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 20px;
     }
 
-    nav .logo span {
-      color: var(--accent);
-    }
-
-    nav .links {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-    }
-
-    nav .links a {
+    .nav-links a {
       font-size: 13px;
-      color: var(--text-dim);
+      color: var(--text-muted);
       text-decoration: none;
-      transition: color 0.15s;
+      font-weight: 500;
     }
 
-    nav .links a:hover { color: var(--text); }
+    .nav-links a:hover { color: var(--text); }
 
     .nav-cta {
-      font-size: 13px !important;
-      font-weight: 600;
-      color: var(--bg) !important;
+      color: #fff !important;
       background: var(--accent);
       padding: 6px 14px;
       border-radius: 8px;
-      transition: background 0.15s;
+      font-weight: 600 !important;
     }
 
-    .nav-cta:hover { background: var(--accent-hover); }
-
-    /* ── Hero ── */
-    .hero {
-      padding: 140px 0 80px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--accent);
-      background: var(--accent-glow);
-      border: 1px solid rgba(34,197,94,0.2);
-      padding: 5px 14px;
-      border-radius: 999px;
-      margin-bottom: 24px;
-    }
-
-    .hero h1 {
-      font-size: clamp(32px, 5vw, 56px);
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -1.5px;
-      max-width: 720px;
-      margin: 0 auto 20px;
-    }
-
-    .hero h1 .highlight {
-      background: linear-gradient(135deg, var(--accent), #4ade80);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero .subtitle {
-      font-size: 18px;
-      color: var(--text-dim);
-      max-width: 540px;
-      margin: 0 auto 36px;
-      line-height: 1.6;
-    }
-
-    .hero .cta-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+    .nav-cta:hover { background: var(--accent-hover); color: #fff !important; }
 
     /* ── Buttons ── */
     .btn {
@@ -192,406 +119,489 @@
       align-items: center;
       gap: 8px;
       font-family: var(--font);
-      font-size: 15px;
       font-weight: 600;
-      padding: 12px 24px;
-      border-radius: 12px;
+      text-decoration: none;
+      border-radius: 10px;
       border: none;
       cursor: pointer;
-      text-decoration: none;
       transition: all 0.15s;
+    }
+
+    .btn-lg {
+      font-size: 16px;
+      padding: 14px 28px;
+    }
+
+    .btn-md {
+      font-size: 14px;
+      padding: 10px 20px;
     }
 
     .btn-primary {
       background: var(--accent);
-      color: #000;
-      box-shadow: 0 0 24px var(--accent-glow);
+      color: #fff;
+      box-shadow: var(--shadow), 0 0 0 1px rgba(13,159,95,0.1);
     }
 
     .btn-primary:hover {
       background: var(--accent-hover);
       transform: translateY(-1px);
-      box-shadow: 0 4px 32px var(--accent-glow);
+      box-shadow: var(--shadow-md), 0 0 0 1px rgba(13,159,95,0.15);
     }
 
-    .btn-secondary {
-      background: var(--bg-card);
+    .btn-outline {
+      background: var(--bg);
       color: var(--text);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-strong);
     }
 
-    .btn-secondary:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-hover);
+    .btn-outline:hover {
+      background: var(--bg-subtle);
+      border-color: var(--text-faint);
     }
 
-    /* ── Stats row ── */
-    .stats {
-      display: flex;
-      justify-content: center;
-      gap: 48px;
-      margin-top: 56px;
-      flex-wrap: wrap;
-    }
-
-    .stat {
+    /* ── Hero ── */
+    .hero {
+      padding: 120px 0 64px;
       text-align: center;
     }
 
-    .stat .num {
-      font-size: 28px;
+    .hero h1 {
+      font-size: clamp(30px, 4.5vw, 48px);
       font-weight: 800;
-      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+      letter-spacing: -1.2px;
       color: var(--text);
-      letter-spacing: -0.5px;
+      max-width: 680px;
+      margin: 0 auto 16px;
     }
 
-    .stat .label {
-      font-size: 13px;
-      color: var(--text-dimmer);
-      margin-top: 2px;
+    .hero .subtitle {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 12px;
+      line-height: 1.6;
+    }
+
+    .hero .support-line {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 28px;
+    }
+
+    .cta-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── What You Get ── */
+    .what-you-get {
+      padding: 56px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .wyg-card {
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      border-radius: 16px;
+      padding: 36px 40px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .wyg-card h2 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .wyg-card h2 .em { color: var(--accent); }
+
+    .wyg-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .wyg-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .wyg-list li .check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+
+    .wyg-cta {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wyg-cta .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ── Section styling ── */
+    section {
+      padding: 72px 0;
+    }
+
+    section + section {
+      border-top: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .section-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin-bottom: 40px;
     }
 
     /* ── Problem → Solution ── */
-    .problem-solution {
+    .ps-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      gap: 20px;
     }
 
     .ps-card {
-      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 28px;
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
+    }
+
+    .ps-card.problem {
+      background: var(--red-bg);
+      border-color: #fecaca;
+    }
+
+    .ps-card.solution {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
     }
 
     .ps-card h3 {
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 20px;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
     }
 
-    .ps-card.problem h3 { color: #ef4444; }
+    .ps-card.problem h3 { color: var(--red); }
     .ps-card.solution h3 { color: var(--accent); }
 
     .ps-card ul {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
     }
 
     .ps-card li {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      font-size: 15px;
-      color: var(--text-dim);
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-secondary);
       line-height: 1.5;
     }
 
-    .ps-card li .icon {
+    .ps-card li .ic {
       flex-shrink: 0;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
       margin-top: 2px;
-    }
-
-    .ps-card.problem li .icon { color: #ef4444; }
-    .ps-card.solution li .icon { color: var(--accent); }
-
-    /* ── Section headers ── */
-    .section-label {
       font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--accent);
-      margin-bottom: 12px;
-    }
-
-    .section-title {
-      font-size: clamp(24px, 3.5vw, 36px);
-      font-weight: 800;
-      letter-spacing: -0.8px;
-      margin-bottom: 12px;
-    }
-
-    .section-desc {
-      font-size: 16px;
-      color: var(--text-dim);
-      max-width: 560px;
-      margin-bottom: 48px;
-    }
-
-    /* ── Features grid ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px;
-      transition: all 0.2s;
-    }
-
-    .feature-card:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-hover);
-      transform: translateY(-2px);
-    }
-
-    .feature-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      margin-bottom: 14px;
-    }
-
-    .feature-card h4 {
-      font-size: 15px;
       font-weight: 700;
-      margin-bottom: 6px;
     }
 
-    .feature-card p {
-      font-size: 13px;
-      color: var(--text-dim);
-      line-height: 1.5;
-    }
+    .ps-card.problem .ic { color: var(--red); }
+    .ps-card.solution .ic { color: var(--accent); }
 
-    .fi-blue { background: var(--blue-dim); }
-    .fi-green { background: var(--accent-glow); }
-    .fi-purple { background: var(--purple-dim); }
-    .fi-orange { background: var(--orange-dim); }
-
-    /* ── How it works ── */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      position: relative;
-    }
-
-    .step {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px 20px;
-      text-align: center;
-      position: relative;
-    }
-
-    .step-num {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--accent-glow);
-      border: 1px solid rgba(34,197,94,0.25);
-      color: var(--accent);
+    .ps-footer {
+      margin-top: 20px;
       font-size: 14px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 14px;
+      color: var(--text-muted);
+      font-style: italic;
     }
 
-    .step h4 {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .step p {
-      font-size: 13px;
-      color: var(--text-dim);
-    }
-
-    .step-arrow {
-      display: none;
-    }
-
-    /* ── Code block ── */
-    .code-block {
-      background: rgba(0,0,0,0.4);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px 24px;
-      margin-top: 32px;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .code-block pre {
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.7;
-      color: var(--text-dim);
-      overflow-x: auto;
-    }
-
-    .code-block .comment { color: var(--text-dimmer); }
-    .code-block .cmd { color: var(--accent); }
-
-    /* ── Use cases ── */
-    .usecases-grid {
+    /* ── Capabilities grid ── */
+    .cap-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 16px;
     }
 
-    .usecase {
-      background: var(--bg-card);
+    .cap-card {
+      background: var(--bg-subtle);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      transition: all 0.2s;
+      border-radius: var(--radius);
+      padding: 24px;
     }
 
-    .usecase:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-hover);
-    }
-
-    .usecase .uc-icon {
-      font-size: 28px;
+    .cap-card .cap-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
       margin-bottom: 12px;
     }
 
-    .usecase h4 {
-      font-size: 16px;
+    .cap-card h4 {
+      font-size: 15px;
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      color: var(--text);
     }
 
-    .usecase p {
+    .cap-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cap-card li {
+      font-size: 13px;
+      color: var(--text-muted);
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .cap-card li::before {
+      content: '·';
+      position: absolute;
+      left: 2px;
+      font-weight: 700;
+      color: var(--text-faint);
+    }
+
+    .ci-blue { background: var(--blue-bg); }
+    .ci-green { background: var(--accent-bg); }
+    .ci-purple { background: var(--purple-bg); }
+    .ci-orange { background: var(--orange-bg); }
+
+    /* ── Steps ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .step {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .step h4 {
       font-size: 14px;
-      color: var(--text-dim);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--text-muted);
       line-height: 1.5;
+    }
+
+    /* ── Example ── */
+    .example-block {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      max-width: 540px;
+    }
+
+    .example-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--bg-muted);
+    }
+
+    .example-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ex-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .ex-label {
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 1px;
+    }
+
+    .ex-label.user { background: var(--blue-bg); color: var(--blue); }
+    .ex-label.bot { background: var(--accent-bg); color: var(--accent); }
+    .ex-label.sys { background: var(--bg-muted); color: var(--text-muted); }
+
+    .ex-row .text { color: var(--text-secondary); }
+
+    .ex-row .text code {
+      font-family: var(--mono);
+      font-size: 13px;
+      background: var(--bg-muted);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .example-note {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 6px;
+    }
+
+    .example-note strong { color: var(--text-secondary); }
+
+    /* ── Tech pills ── */
+    .tech-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tech-pill {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 8px;
+    }
+
+    /* ── Use cases ── */
+    .uc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 520px;
+    }
+
+    .uc-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .uc-item .uc-icon {
+      font-size: 20px;
+      flex-shrink: 0;
     }
 
     /* ── Final CTA ── */
     .final-cta {
       text-align: center;
-      padding: 100px 0;
-      position: relative;
-    }
-
-    .final-cta::before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-      pointer-events: none;
+      padding: 80px 0;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
     }
 
     .final-cta h2 {
-      font-size: clamp(28px, 4vw, 42px);
+      font-size: clamp(24px, 3.5vw, 36px);
       font-weight: 800;
-      letter-spacing: -1px;
-      margin-bottom: 14px;
+      letter-spacing: -0.8px;
+      margin-bottom: 8px;
     }
 
-    .final-cta .subtitle {
-      font-size: 17px;
-      color: var(--text-dim);
-      margin-bottom: 32px;
-      max-width: 480px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    /* ── Chat mockup ── */
-    .chat-mock {
-      max-width: 420px;
-      margin: 48px auto 0;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-    }
-
-    .chat-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .chat-header .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .chat-header span {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .chat-body {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chat-msg {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .chat-msg.user {
-      background: var(--blue-dim);
-      border: 1px solid rgba(59,130,246,0.15);
-      align-self: flex-end;
-      color: var(--text);
-    }
-
-    .chat-msg.bot {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      align-self: flex-start;
-      color: var(--text-dim);
-    }
-
-    .chat-msg .bot-label {
-      font-size: 11px;
-      color: var(--accent);
-      font-weight: 600;
-      margin-bottom: 4px;
+    .final-cta .sub {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
     }
 
     /* ── Footer ── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 32px 0;
+      padding: 28px 0;
     }
 
     .footer-inner {
@@ -599,374 +609,309 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 12px;
     }
 
     .footer-left {
       font-size: 13px;
-      color: var(--text-dimmer);
+      color: var(--text-faint);
     }
 
     .footer-links {
       display: flex;
-      gap: 20px;
+      gap: 18px;
     }
 
     .footer-links a {
       font-size: 13px;
-      color: var(--text-dim);
+      color: var(--text-muted);
       text-decoration: none;
-      transition: color 0.15s;
     }
 
     .footer-links a:hover { color: var(--text); }
 
-    /* ── Tech stack pills ── */
-    .tech-pills {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 24px;
-    }
-
-    .pill {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-dim);
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      padding: 4px 12px;
-      border-radius: 999px;
-    }
-
     /* ── Responsive ── */
     @media (max-width: 768px) {
-      section { padding: 56px 0; }
-
-      .problem-solution,
-      .usecases-grid { grid-template-columns: 1fr; }
-
-      .features-grid { grid-template-columns: 1fr 1fr; }
-
+      section { padding: 48px 0; }
+      .ps-grid, .cap-grid { grid-template-columns: 1fr; }
       .steps { grid-template-columns: 1fr 1fr; }
-
-      .stats { gap: 32px; }
-
-      nav .links a:not(.nav-cta) { display: none; }
+      .wyg-card { grid-template-columns: 1fr; text-align: center; }
+      .wyg-list { align-items: center; }
+      .nav-links a:not(.nav-cta) { display: none; }
     }
 
     @media (max-width: 480px) {
-      .features-grid { grid-template-columns: 1fr; }
       .steps { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ── NAV ── -->
+  <!-- NAV -->
   <nav>
     <div class="inner">
-      <a href="#" class="logo">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-        Open<span>Claw</span> Zalo
-      </a>
-      <div class="links">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="#use-cases">Use Cases</a>
-        <a href="https://github.com/monasprox/opclaw-zalo">GitHub</a>
+      <a href="#" class="logo">Open<span>Claw</span> Zalo</a>
+      <div class="nav-links">
+        <a href="#capabilities">Features</a>
+        <a href="#how-it-works">Setup</a>
+        <a href="https://github.com/monasprox/opclaw-zalo" target="_blank" rel="noopener">GitHub</a>
         <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="nav-cta" target="_blank" rel="noopener">Join Group</a>
       </div>
     </div>
   </nav>
 
-  <!-- ── HERO ── -->
+  <!-- HERO -->
   <section class="hero">
     <div class="container">
-      <div class="badge">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-        Open Source &middot; MIT License
-      </div>
-
-      <h1>
-        Build <span class="highlight">AI-Powered Zalo</span><br>Automation in Minutes
-      </h1>
-
-      <p class="subtitle">
-        Connect your Zalo personal account to OpenClaw's agent framework.
-        147 API actions. QR login. Groups & DMs. Zero boilerplate.
-      </p>
-
+      <h1>Automate Zalo with AI — in Minutes, Not Weeks</h1>
+      <p class="subtitle">Control personal Zalo accounts, automate messages, run tools, and build real workflows — without SDK hell or reverse engineering.</p>
+      <p class="support-line">Join the Zalo group to get the plugin, setup help, and real-world automation examples.</p>
       <div class="cta-row">
-        <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="btn btn-primary" target="_blank" rel="noopener">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4"/></svg>
-          Join Zalo Group
+        <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="btn btn-lg btn-primary" target="_blank" rel="noopener">
+          👉 Join Zalo Group
         </a>
-        <a href="https://github.com/monasprox/opclaw-zalo" class="btn btn-secondary" target="_blank" rel="noopener">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.509 11.509 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-          View on GitHub
+        <a href="https://github.com/monasprox/opclaw-zalo" class="btn btn-lg btn-outline" target="_blank" rel="noopener">
+          ⭐ View on GitHub
         </a>
-      </div>
-
-      <!-- Chat mockup -->
-      <div class="chat-mock">
-        <div class="chat-header">
-          <div class="dot"></div>
-          <span>Team DevOps — Zalo Group</span>
-        </div>
-        <div class="chat-body">
-          <div class="chat-msg user">@OpenClaw tạo poll "Deploy lúc nào?" options: "Thứ 6", "Thứ 7", "CN"</div>
-          <div class="chat-msg bot">
-            <div class="bot-label">🤖 OpenClaw</div>
-            ✅ Poll created in group "Team DevOps"<br>
-            &nbsp;&nbsp;📊 Deploy lúc nào?<br>
-            &nbsp;&nbsp;1. Thứ 6<br>
-            &nbsp;&nbsp;2. Thứ 7<br>
-            &nbsp;&nbsp;3. CN
-          </div>
-          <div class="chat-msg user">@OpenClaw gửi file /reports/q1-2026.pdf cho nhóm "Ban giám đốc"</div>
-          <div class="chat-msg bot">
-            <div class="bot-label">🤖 OpenClaw</div>
-            ✅ File sent: q1-2026.pdf (2.4 MB)<br>
-            → Group: Ban giám đốc
-          </div>
-        </div>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="num">147</div>
-          <div class="label">API Actions</div>
-        </div>
-        <div class="stat">
-          <div class="num">v2.0</div>
-          <div class="label">Stable Release</div>
-        </div>
-        <div class="stat">
-          <div class="num">0</div>
-          <div class="label">Build Steps</div>
-        </div>
-        <div class="stat">
-          <div class="num">MIT</div>
-          <div class="label">License</div>
-        </div>
-      </div>
-
-      <div class="tech-pills">
-        <span class="pill">TypeScript</span>
-        <span class="pill">zca-js v2.1</span>
-        <span class="pill">Node.js ≥22</span>
-        <span class="pill">OpenClaw ≥2026.2</span>
       </div>
     </div>
   </section>
 
-  <!-- ── PROBLEM → SOLUTION ── -->
-  <section id="problem">
+  <!-- WHAT YOU GET -->
+  <div class="what-you-get">
     <div class="container">
-      <div class="section-label">Why This Exists</div>
-      <div class="section-title">Zalo automation is hard. We fixed that.</div>
-      <div class="section-desc">75M users, zero official bot API for personal accounts. Until now.</div>
+      <div class="wyg-card">
+        <div>
+          <h2>When you <span class="em">join the group</span>, you get:</h2>
+          <ul class="wyg-list">
+            <li><span class="check">✓</span> Full plugin source — ready to run</li>
+            <li><span class="check">✓</span> Step-by-step setup guidance</li>
+            <li><span class="check">✓</span> Real automation use cases (not toy examples)</li>
+            <li><span class="check">✓</span> Direct support &amp; updates from maintainer</li>
+          </ul>
+        </div>
+        <div class="wyg-cta">
+          <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="btn btn-md btn-primary" target="_blank" rel="noopener">Join Zalo Group</a>
+          <span class="hint">Free · Open Source · MIT</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <div class="problem-solution">
+  <!-- WHY THIS EXISTS -->
+  <section id="why">
+    <div class="container">
+      <div class="section-label">The Problem</div>
+      <div class="section-title">Why Zalo Automation Is Painful Today</div>
+      <div class="section-desc">75M users. Zero official bot API for personal accounts.</div>
+
+      <div class="ps-grid">
         <div class="ps-card problem">
           <h3>✕ Without OpenClaw</h3>
           <ul>
-            <li><span class="icon">✕</span> No official bot API for personal Zalo</li>
-            <li><span class="icon">✕</span> Reverse-engineering protocol changes</li>
-            <li><span class="icon">✕</span> Manual cookie management & session handling</li>
-            <li><span class="icon">✕</span> No access control — anyone can trigger actions</li>
-            <li><span class="icon">✕</span> Building from scratch every time</li>
+            <li><span class="ic">✕</span> No official SDK for real automation</li>
+            <li><span class="ic">✕</span> Personal accounts are hard to control programmatically</li>
+            <li><span class="ic">✕</span> Multi-account workflows are messy</li>
+            <li><span class="ic">✕</span> Debugging chat flows is painful</li>
           </ul>
         </div>
         <div class="ps-card solution">
-          <h3>✓ With OpenClaw Zalo Plugin</h3>
+          <h3>✓ With OpenClaw Zalo</h3>
           <ul>
-            <li><span class="icon">✓</span> QR scan login, auto-persist credentials</li>
-            <li><span class="icon">✓</span> 147 pre-built actions — messaging, groups, polls, reminders</li>
-            <li><span class="icon">✓</span> Built-in access control: allow/deny lists, pairing mode</li>
-            <li><span class="icon">✓</span> Mention gating, output filtering, thread sandbox</li>
-            <li><span class="icon">✓</span> Event-driven, plugin architecture, zero build step</li>
+            <li><span class="ic">✓</span> Event-based message handling</li>
+            <li><span class="ic">✓</span> Tool execution inside chat</li>
+            <li><span class="ic">✓</span> Built-in safety &amp; output filtering</li>
+            <li><span class="ic">✓</span> Multi-account ready</li>
+          </ul>
+        </div>
+      </div>
+      <p class="ps-footer">A structured, event-driven way to control Zalo — like an actual system, not hacks.</p>
+    </div>
+  </section>
+
+  <!-- CORE CAPABILITIES -->
+  <section id="capabilities">
+    <div class="container">
+      <div class="section-label">Capabilities</div>
+      <div class="section-title">What you can do — at a glance</div>
+      <div class="section-desc">147 actions across 15 categories. All typed. Names auto-resolve to IDs.</div>
+
+      <div class="cap-grid">
+        <div class="cap-card">
+          <div class="cap-icon ci-blue">💬</div>
+          <h4>Messaging &amp; Automation</h4>
+          <ul>
+            <li>Send messages, files, images, videos, stickers</li>
+            <li>Handle groups &amp; DMs with policies</li>
+            <li>Reply with full quote context</li>
+            <li>Rich text: bold, italic, colors, urgency</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon ci-green">🤖</div>
+          <h4>AI + Tool Execution</h4>
+          <ul>
+            <li>Run 147 tools directly from chat</li>
+            <li>Parse mentions and intent</li>
+            <li>Connect AI agents to Zalo</li>
+            <li>Image analysis on @mention</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon ci-purple">🔒</div>
+          <h4>Access Control &amp; Safety</h4>
+          <ul>
+            <li>Per-user and per-group allow/deny lists</li>
+            <li>Output filtering &amp; content redaction</li>
+            <li>Thread sandbox isolation</li>
+            <li>Pairing mode for unknown users</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon ci-orange">⚡</div>
+          <h4>Real Workflows</h4>
+          <ul>
+            <li>Customer support automation</li>
+            <li>Internal team assistants</li>
+            <li>Lead capture &amp; routing</li>
+            <li>Polls, reminders, catalogs, notes</li>
           </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── FEATURES ── -->
-  <section id="features">
-    <div class="container">
-      <div class="section-label">Features</div>
-      <div class="section-title">Everything you need to automate Zalo</div>
-      <div class="section-desc">147 actions across 15 categories. Fully typed. Auto-resolves names to IDs.</div>
-
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon fi-blue">💬</div>
-          <h4>Rich Messaging</h4>
-          <p>Text, images, files, videos, voice, stickers, cards. Bold, italic, underline, colors. Urgency levels.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-green">👥</div>
-          <h4>Group Management</h4>
-          <p>Create groups, manage members, admins, settings, invite links, pending approvals. 22 group actions.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-purple">🔒</div>
-          <h4>Access Control</h4>
-          <p>DM policies (open/pairing/allowlist/disabled). Per-group allow/deny lists. Mention gating.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-orange">📊</div>
-          <h4>Polls & Reminders</h4>
-          <p>Create polls with multi-choice, anonymous voting, expiry. Set reminders with repeat schedules.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-blue">🤖</div>
-          <h4>AI Agent Integration</h4>
-          <p>Direct integration with OpenClaw agent framework. Context assembly, quote extraction, image analysis.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-green">⚡</div>
-          <h4>Zero Build Step</h4>
-          <p>TypeScript loaded directly by OpenClaw runtime. No compilation. Edit, restart, done.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-purple">💼</div>
-          <h4>Business Tools</h4>
-          <p>Product catalogs, quick messages, auto-replies, contact labels, notes. Full commerce support.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-orange">🛡️</div>
-          <h4>Safety Built-In</h4>
-          <p>Output filtering, thread sandboxing, sensitive content redaction. Block users at Zalo or bot level.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon fi-blue">↩️</div>
-          <h4>Reply Context</h4>
-          <p>When users reply to messages, AI receives the quoted text + sender. Full conversation context.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── HOW IT WORKS ── -->
+  <!-- HOW IT WORKS -->
   <section id="how-it-works">
     <div class="container">
-      <div class="section-label">How It Works</div>
-      <div class="section-title">Four steps to Zalo automation</div>
-      <div class="section-desc">From zero to running bot in under 5 minutes.</div>
+      <div class="section-label">Setup</div>
+      <div class="section-title">From zero to running automation</div>
+      <div class="section-desc">Four steps. No build step. Under 5 minutes.</div>
 
       <div class="steps">
         <div class="step">
           <div class="step-num">1</div>
-          <h4>Install Plugin</h4>
-          <p>Clone repo, npm install, register with OpenClaw</p>
+          <h4>Install plugin</h4>
+          <p>Clone, npm install, register with OpenClaw CLI</p>
         </div>
         <div class="step">
           <div class="step-num">2</div>
           <h4>Scan QR</h4>
-          <p>Login with your Zalo app. Credentials auto-saved.</p>
+          <p>Connect your Zalo account. Credentials auto-saved.</p>
         </div>
         <div class="step">
           <div class="step-num">3</div>
-          <h4>Configure</h4>
-          <p>Set DM policy, group rules, mention gating in JSON config.</p>
+          <h4>Define rules</h4>
+          <p>Set DM policy, group access, mention gating in config.</p>
         </div>
         <div class="step">
           <div class="step-num">4</div>
-          <h4>Automate</h4>
-          <p>AI agent handles messages, executes 147 actions on your behalf.</p>
+          <h4>Let it run</h4>
+          <p>Agent handles messages, executes tools, manages conversations.</p>
         </div>
-      </div>
-
-      <div class="code-block">
-        <pre><span class="comment"># Install</span>
-<span class="cmd">git clone</span> https://github.com/monasprox/opclaw-zalo.git
-<span class="cmd">cd</span> opclaw-zalo && <span class="cmd">npm install</span>
-
-<span class="comment"># Register & start</span>
-<span class="cmd">openclaw plugins install</span> --link .
-<span class="cmd">openclaw gateway restart</span>
-
-<span class="comment"># Login via QR</span>
-<span class="cmd">openclaw channels login</span> --channel opclaw-zalo</pre>
       </div>
     </div>
   </section>
 
-  <!-- ── USE CASES ── -->
+  <!-- EXAMPLE -->
+  <section id="example">
+    <div class="container">
+      <div class="section-label">In Action</div>
+      <div class="section-title">How it looks in practice</div>
+      <div class="section-desc">Natural language → intent parsing → tool execution → done.</div>
+
+      <div class="example-block">
+        <div class="example-header">Zalo Group Chat</div>
+        <div class="example-body">
+          <div class="ex-row">
+            <span class="ex-label user">User</span>
+            <span class="text"><code>@bot</code> gửi file báo cáo Q1 cho nhóm "Ban giám đốc"</span>
+          </div>
+          <div class="ex-row">
+            <span class="ex-label sys">→</span>
+            <span class="text">Bot parses intent → resolves group name → executes <code>send-file</code></span>
+          </div>
+          <div class="ex-row">
+            <span class="ex-label bot">Bot</span>
+            <span class="text">✅ File sent: q1-report.pdf (2.4 MB) → Group: Ban giám đốc</span>
+          </div>
+        </div>
+        <div class="example-note">
+          <strong>Key:</strong> No manual routing. No hardcoded logic. Names resolve automatically.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECH -->
+  <section id="tech">
+    <div class="container">
+      <div class="section-label">Stack</div>
+      <div class="section-title">Technical details</div>
+      <div class="section-desc" style="margin-bottom: 20px;">Plugin architecture. Runtime-loaded TypeScript. No compile step.</div>
+
+      <div class="tech-row">
+        <span class="tech-pill">TypeScript (runtime-loaded)</span>
+        <span class="tech-pill">zca-js v2.1</span>
+        <span class="tech-pill">Node.js ≥ 22</span>
+        <span class="tech-pill">OpenClaw ≥ 2026.2</span>
+        <span class="tech-pill">Plugin architecture</span>
+        <span class="tech-pill">0 build steps</span>
+        <span class="tech-pill">MIT License</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
   <section id="use-cases">
     <div class="container">
       <div class="section-label">Use Cases</div>
-      <div class="section-title">What can you build?</div>
-      <div class="section-desc">Real-world automation scenarios powered by the plugin.</div>
+      <div class="section-title">Built for real work</div>
+      <div class="section-desc">Not demos. Actual production workflows.</div>
 
-      <div class="usecases-grid">
-        <div class="usecase">
-          <div class="uc-icon">🎧</div>
-          <h4>Customer Support Bot</h4>
-          <p>Auto-reply to DMs, route queries to team groups, send quick response templates. Handle friend requests automatically.</p>
+      <div class="uc-list">
+        <div class="uc-item">
+          <span class="uc-icon">🎧</span>
+          AI support agent for Zalo inbox
         </div>
-        <div class="usecase">
-          <div class="uc-icon">📈</div>
-          <h4>Lead Capture from Zalo</h4>
-          <p>Find users by phone, send friend requests, track status. Manage product catalogs and share with prospects.</p>
+        <div class="uc-item">
+          <span class="uc-icon">🏢</span>
+          Internal team automation &amp; task bots
         </div>
-        <div class="usecase">
-          <div class="uc-icon">🏢</div>
-          <h4>Internal Team Bot</h4>
-          <p>Create polls for decisions, set reminders for meetings, manage group settings. Mention-gated — only responds when called.</p>
+        <div class="uc-item">
+          <span class="uc-icon">🔔</span>
+          Notification &amp; workflow orchestration
         </div>
-        <div class="usecase">
-          <div class="uc-icon">🤖</div>
-          <h4>AI Assistant in Group Chat</h4>
-          <p>Full AI agent in Zalo groups. Understands reply context, processes images, executes complex multi-step tasks via natural language.</p>
+        <div class="uc-item">
+          <span class="uc-icon">🛠️</span>
+          Chat-based tool execution
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── FINAL CTA ── -->
+  <!-- FINAL CTA -->
   <section class="final-cta">
     <div class="container">
-      <div class="section-label">Get Started</div>
-      <h2>Start Building with<br>OpenClaw Zalo Today</h2>
-      <p class="subtitle">Join the community. Get the plugin, updates, real-world automation use cases, and direct support.</p>
-
+      <h2>Start Building Zalo Automation Today</h2>
+      <p class="sub">Skip the hacks. Use a real system.</p>
       <div class="cta-row">
-        <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="btn btn-primary" target="_blank" rel="noopener" style="font-size: 17px; padding: 14px 32px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4"/></svg>
-          Join Zalo Group Now
+        <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="btn btn-lg btn-primary" target="_blank" rel="noopener" style="font-size: 17px; padding: 16px 36px;">
+          👉 Join Zalo Group Now
         </a>
-        <a href="https://github.com/monasprox/opclaw-zalo" class="btn btn-secondary" target="_blank" rel="noopener">
-          View Source on GitHub
-        </a>
-      </div>
-
-      <div class="tech-pills" style="margin-top: 40px;">
-        <span class="pill">Open Source</span>
-        <span class="pill">MIT License</span>
-        <span class="pill">147 Actions</span>
-        <span class="pill">Zero Build Step</span>
-        <span class="pill">TypeScript</span>
       </div>
     </div>
   </section>
 
-  <!-- ── FOOTER ── -->
+  <!-- FOOTER -->
   <footer>
     <div class="container">
       <div class="footer-inner">
-        <div class="footer-left">
-          © 2026 OpenClaw Zalo Plugin &middot; MIT License &middot; monasprox
-        </div>
+        <div class="footer-left">© 2026 OpenClaw Zalo · MIT License</div>
         <div class="footer-links">
           <a href="https://github.com/monasprox/opclaw-zalo" target="_blank" rel="noopener">GitHub</a>
           <a href="https://github.com/monasprox/opclaw-zalo/blob/main/docs/agent-install.md" target="_blank" rel="noopener">Docs</a>
-          <a href="https://github.com/monasprox/opclaw-zalo/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
-          <a href="https://github.com/monasprox/opclaw-zalo/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+          <a href="https://github.com/nicholasxuu/openclaw" target="_blank" rel="noopener">OpenClaw</a>
         </div>
       </div>
     </div>
