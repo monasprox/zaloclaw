@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { OpclawZaloConfig } from "./types.js";
+import type { OpclawZaloConfig } from "../runtime/types.js";
 
 const DEFAULT_CONFIG_PATH = join(homedir(), ".openclaw", "openclaw.json");
 

@@ -1,1 +1,35 @@
+# Dependencies
 node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Zalo session artifacts
+qr-*.png
+session-*.json
+
+# Temp files
+tmp/
+*.tmp

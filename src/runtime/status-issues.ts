@@ -1,4 +1,4 @@
-import { hasStoredCredentials } from "./zalo-client.js";
+import { hasStoredCredentials } from "../client/zalo-client.js";
 
 export interface StatusIssue {
   severity: "error" | "warning" | "info";

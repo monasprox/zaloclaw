@@ -1,9 +1,30 @@
 {
   "name": "opclaw-zalo",
   "version": "2.0.0",
-  "description": "OpenClaw Zalo channel plugin via zca-js",
+  "description": "OpenClaw channel plugin for Zalo personal accounts via zca-js",
   "type": "module",
   "main": "index.ts",
+  "license": "MIT",
+  "author": "monasprox",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/monasprox/opclaw-zalo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/monasprox/opclaw-zalo/issues"
+  },
+  "homepage": "https://github.com/monasprox/opclaw-zalo#readme",
+  "keywords": [
+    "openclaw",
+    "zalo",
+    "chatbot",
+    "channel-plugin",
+    "zca-js",
+    "messaging"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "openclaw": {
     "extensions": ["./index.ts"]
   },

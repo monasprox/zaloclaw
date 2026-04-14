@@ -16,7 +16,7 @@ import {
   normalizeAccountId,
   setAccountEnabledInConfigSection,
 } from "openclaw/plugin-sdk/channel-plugin-common";
-import type { OpclawZaloFriend, OpclawZaloGroup, OpclawZaloUserInfo } from "./types.js";
+import type { OpclawZaloFriend, OpclawZaloGroup, OpclawZaloUserInfo } from "../runtime/types.js";
 import {
   listOpclawZaloAccountIds,
   resolveDefaultOpclawZaloAccountId,
@@ -24,15 +24,15 @@ import {
   getOpclawZaloUserInfo,
   checkOpclawZaloAuthenticated,
   type ResolvedOpclawZaloAccount,
-} from "./accounts.js";
-import { OpclawZaloConfigSchema, OpclawZaloChannelConfigSchema } from "./config-schema.js";
+} from "../client/accounts.js";
+import { OpclawZaloConfigSchema, OpclawZaloChannelConfigSchema } from "../config/config-schema.js";
 import { opclawZaloOnboardingAdapter } from "./onboarding.js";
 import { probeOpclawZalo } from "./probe.js";
 import { sendMessageOpclawZalo, isLocalFilePath } from "./send.js";
-import { collectOpclawZaloStatusIssues } from "./status-issues.js";
-import { hasStoredCredentials, loginWithQR } from "./zalo-client.js";
+import { collectOpclawZaloStatusIssues } from "../runtime/status-issues.js";
+import { hasStoredCredentials, loginWithQR } from "../client/zalo-client.js";
 import { LoginQRCallbackEventType } from "zca-js";
-import { displayQRFromPNG } from "./qr-display.js";
+import { displayQRFromPNG } from "../client/qr-display.js";
 import * as fs from "fs";
 import * as readline from "readline";
 
@@ -289,7 +289,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
   directory: {
     self: async ({ cfg, accountId, runtime }) => {
       try {
-        const { getApi } = await import("./zalo-client.js");
+        const { getApi } = await import("../client/zalo-client.js");
         const api = await getApi();
         const raw = await api.fetchAccountInfo();
         const info = (raw as any)?.profile ?? raw;
@@ -306,7 +306,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       }
     },
     listPeers: async ({ cfg, accountId, query, limit }) => {
-      const { getApi } = await import("./zalo-client.js");
+      const { getApi } = await import("../client/zalo-client.js");
       const api = await getApi();
       const friends = await api.getAllFriends();
       let rows: ChannelDirectoryEntry[] = [];
@@ -329,7 +329,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       return typeof limit === "number" && limit > 0 ? rows.slice(0, limit) : rows;
     },
     listGroups: async ({ cfg, accountId, query, limit }) => {
-      const { getApi } = await import("./zalo-client.js");
+      const { getApi } = await import("../client/zalo-client.js");
       const api = await getApi();
       const groupsResp = await api.getAllGroups();
       const groupIds = Object.keys(groupsResp?.gridVerMap ?? {});
@@ -352,7 +352,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       return typeof limit === "number" && limit > 0 ? rows.slice(0, limit) : rows;
     },
     listGroupMembers: async ({ cfg, accountId, groupId, limit }) => {
-      const { getApi } = await import("./zalo-client.js");
+      const { getApi } = await import("../client/zalo-client.js");
       const api = await getApi();
       const infoResp = await api.getGroupInfo(groupId);
       const groupInfo = infoResp?.gridInfoMap?.[groupId];
@@ -394,7 +394,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
           continue;
         }
         try {
-          const { getApi } = await import("./zalo-client.js");
+          const { getApi } = await import("../client/zalo-client.js");
           const api = await getApi();
           if (kind === "user") {
             const friends = await api.getAllFriends();
@@ -629,7 +629,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       return { connected, message: connected ? "Login successful" : "Login pending" };
     },
     logoutAccount: async (ctx) => {
-      const { logout } = await import("./zalo-client.js");
+      const { logout } = await import("../client/zalo-client.js");
       await logout();
       return { cleared: true, loggedOut: true, message: "Logged out and credentials cleared" };
     },

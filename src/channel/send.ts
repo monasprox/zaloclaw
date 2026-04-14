@@ -1,7 +1,7 @@
 import { ThreadType, TextStyle, type Style, type MessageContent, type Mention, type SendMessageQuote } from "zca-js";
-import { getApi } from "./zalo-client.js";
-import { resolveOutboundMentions } from "./mention-parser.js";
-import { redactOutput } from "./output-filter.js";
+import { getApi } from "../client/zalo-client.js";
+import { resolveOutboundMentions } from "../parsing/mention-parser.js";
+import { redactOutput } from "../safety/output-filter.js";
 import * as fs from "fs";
 import * as path from "path";
 

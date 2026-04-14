@@ -1,8 +1,8 @@
 import type { AnyAgentTool, OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
-import { opclawZaloDock, opclawZaloPlugin } from "./src/channel.js";
-import { setOpclawZaloRuntime } from "./src/runtime.js";
-import { OpclawZaloToolSchema, executeOpclawZaloTool } from "./src/tool.js";
+import { opclawZaloDock, opclawZaloPlugin } from "./src/channel/channel.js";
+import { setOpclawZaloRuntime } from "./src/runtime/runtime.js";
+import { OpclawZaloToolSchema, executeOpclawZaloTool } from "./src/tools/tool.js";
 
 const plugin = {
   id: "opclaw-zalo",

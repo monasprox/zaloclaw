@@ -1,4 +1,4 @@
-import { getApi, getCurrentUid } from "./zalo-client.js";
+import { getApi, getCurrentUid } from "../client/zalo-client.js";
 
 export interface ProbeResult {
   ok: boolean;

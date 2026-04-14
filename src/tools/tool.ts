@@ -17,8 +17,8 @@ import {
   MuteDuration,
   UpdateSettingsType,
 } from "zca-js";
-import { getApi } from "./zalo-client.js";
-import { lookupCliMsgId } from "./features/msg-id-store.js";
+import { getApi } from "../client/zalo-client.js";
+import { lookupCliMsgId } from "../features/msg-id-store.js";
 import {
   readOpenClawConfig,
   writeOpenClawConfig,
@@ -34,8 +34,8 @@ import {
   listAllowedUsersInGroup,
   setGroupRequireMention,
   getGroupRequireMention,
-} from "./config-manager.js";
-import { getPendingRequests, removePendingRequest } from "./friend-request-store.js";
+} from "../config/config-manager.js";
+import { getPendingRequests, removePendingRequest } from "../client/friend-request-store.js";
 
 // ─── Result helper ───────────────────────────────────────────────────────────
 
@@ -440,7 +440,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       let msg = p.message;
       let styles = p.styles as any[] | undefined;
       if (!styles || styles.length === 0) {
-        const { markdownToZaloStyles } = await import("./send.js");
+        const { markdownToZaloStyles } = await import("../channel/send.js");
         const converted = markdownToZaloStyles(msg);
         msg = converted.text;
         styles = converted.styles;
@@ -1353,7 +1353,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "status": {
-      const { isAuthenticated, hasStoredCredentials } = await import("./zalo-client.js");
+      const { isAuthenticated, hasStoredCredentials } = await import("../client/zalo-client.js");
       return ok({ authenticated: isAuthenticated(), hasCredentials: hasStoredCredentials() });
     }
 

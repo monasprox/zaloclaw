@@ -16,15 +16,15 @@ function resolveMentionGatingWithBypass(params: {
 }
 
 import { ThreadType, FriendEventType, Reactions, type API, type Message, type UserMessage, type GroupMessage, type FriendEvent, type Reaction, type Typing, type SendMessageQuote } from "zca-js";
-import type { ResolvedOpclawZaloAccount, OpclawZaloFriend, OpclawZaloGroup, OpclawZaloMessage } from "./types.js";
-import { getOpclawZaloRuntime } from "./runtime.js";
+import type { ResolvedOpclawZaloAccount, OpclawZaloFriend, OpclawZaloGroup, OpclawZaloMessage } from "../runtime/types.js";
+import { getOpclawZaloRuntime } from "../runtime/runtime.js";
 import { sendMessageOpclawZalo } from "./send.js";
-import { getApi, getCurrentUid } from "./zalo-client.js";
+import { getApi, getCurrentUid } from "../client/zalo-client.js";
 import { downloadImagesFromUrls } from "./image-downloader.js";
-import { addPendingRequest, removePendingRequest } from "./friend-request-store.js";
-import { recordReadReceipt } from "./features/read-receipt.js";
-import { recordMsgId } from "./features/msg-id-store.js";
-import { refreshCredentials } from "./credentials.js";
+import { addPendingRequest, removePendingRequest } from "../client/friend-request-store.js";
+import { recordReadReceipt } from "../features/read-receipt.js";
+import { recordMsgId } from "../features/msg-id-store.js";
+import { refreshCredentials } from "../client/credentials.js";
 
 export type OpclawZaloMonitorOptions = {
   account: ResolvedOpclawZaloAccount;

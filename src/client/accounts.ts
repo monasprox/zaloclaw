@@ -1,6 +1,6 @@
 import type { OpenClawConfig } from "openclaw/plugin-sdk/channel-plugin-common";
 import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/channel-plugin-common";
-import type { ResolvedOpclawZaloAccount, OpclawZaloAccountConfig, OpclawZaloConfig } from "./types.js";
+import type { ResolvedOpclawZaloAccount, OpclawZaloAccountConfig, OpclawZaloConfig } from "../runtime/types.js";
 import { hasStoredCredentials } from "./zalo-client.js";
 
 function listConfiguredAccountIds(cfg: OpenClawConfig): string[] {
@@ -92,4 +92,4 @@ export async function getOpclawZaloUserInfo(): Promise<{ userId?: string; displa
   }
 }
 
-export type { ResolvedOpclawZaloAccount } from "./types.js";
+export type { ResolvedOpclawZaloAccount } from "../runtime/types.js";

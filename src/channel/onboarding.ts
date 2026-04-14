@@ -19,10 +19,10 @@ import {
   resolveDefaultOpclawZaloAccountId,
   resolveOpclawZaloAccountSync,
   checkOpclawZaloAuthenticated,
-} from "./accounts.js";
-import { hasStoredCredentials, loginWithQR } from "./zalo-client.js";
+} from "../client/accounts.js";
+import { hasStoredCredentials, loginWithQR } from "../client/zalo-client.js";
 import { LoginQRCallbackEventType } from "zca-js";
-import { displayQRFromPNG } from "./qr-display.js";
+import { displayQRFromPNG } from "../client/qr-display.js";
 
 const channel = "opclaw-zalo" as const;
 
@@ -76,7 +76,7 @@ async function promptOpclawZaloAllowFrom(params: {
     if (!trimmed) return null;
     if (/^\d+$/.test(trimmed)) return trimmed;
     try {
-      const { getApi } = await import("./zalo-client.js");
+      const { getApi } = await import("../client/zalo-client.js");
       const api = await getApi();
       const friends = await api.getAllFriends();
       const friendList = Array.isArray(friends) ? friends : [];
@@ -222,7 +222,7 @@ async function resolveOpclawZaloGroups(params: {
   entries: string[];
 }): Promise<Array<{ input: string; resolved: boolean; id?: string }>> {
   try {
-    const { getApi } = await import("./zalo-client.js");
+    const { getApi } = await import("../client/zalo-client.js");
     const api = await getApi();
     const groupsResp = await api.getAllGroups();
     const groupIds = Object.keys(groupsResp?.gridVerMap ?? {});
@@ -369,7 +369,7 @@ export const opclawZaloOnboardingAdapter: ChannelOnboardingAdapter = {
         initialValue: true,
       });
       if (!keepSession) {
-        const { logout } = await import("./zalo-client.js");
+        const { logout } = await import("../client/zalo-client.js");
         await logout();
         await prompter.note(
           "A QR code will be displayed below.\nScan it with your Zalo app to login.",

@@ -1,5 +1,5 @@
 import type { Mention } from "zca-js";
-import { getApi } from "./zalo-client.js";
+import { getApi } from "../client/zalo-client.js";
 
 const MEMBER_CACHE_TTL_MS = 5 * 60 * 1000;
 const MEMBER_CACHE_MAX = 50;
