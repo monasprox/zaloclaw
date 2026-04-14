@@ -84,7 +84,11 @@ export async function validateUrlForOutboundFetch(rawUrl: string): Promise<URL> 
     throw new Error("URLs with embedded credentials are not allowed");
   }
 
-  const hostname = parsed.hostname;
+  // Extract hostname, strip IPv6 brackets if present
+  let hostname = parsed.hostname;
+  if (hostname.startsWith("[") && hostname.endsWith("]")) {
+    hostname = hostname.slice(1, -1);
+  }
 
   // If hostname is an IP literal, check directly
   if (net.isIP(hostname)) {
