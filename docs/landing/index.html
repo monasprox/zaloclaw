@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw Zalo Plugin — AI-Powered Zalo Automation</title>
+  <meta name="description" content="Connect your Zalo personal account to OpenClaw's AI agent framework. 147 API actions, QR login, group & DM support. Open source.">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: rgba(255,255,255,0.04);
+      --bg-card-hover: rgba(255,255,255,0.07);
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.14);
+      --text: #e4e4e7;
+      --text-dim: #a1a1aa;
+      --text-dimmer: #71717a;
+      --accent: #22c55e;
+      --accent-hover: #16a34a;
+      --accent-glow: rgba(34,197,94,0.15);
+      --blue: #3b82f6;
+      --blue-dim: rgba(59,130,246,0.12);
+      --purple: #a78bfa;
+      --purple-dim: rgba(167,139,250,0.12);
+      --orange: #f97316;
+      --orange-dim: rgba(249,115,22,0.12);
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section {
+      padding: 80px 0;
+    }
+
+    section + section {
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+
+    nav .inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+
+    nav .logo {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.3px;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    nav .logo span {
+      color: var(--accent);
+    }
+
+    nav .links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    nav .links a {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    nav .links a:hover { color: var(--text); }
+
+    .nav-cta {
+      font-size: 13px !important;
+      font-weight: 600;
+      color: var(--bg) !important;
+      background: var(--accent);
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+
+    .nav-cta:hover { background: var(--accent-hover); }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 140px 0 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(34,197,94,0.2);
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      max-width: 720px;
+      margin: 0 auto 20px;
+    }
+
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--accent), #4ade80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero .subtitle {
+      font-size: 18px;
+      color: var(--text-dim);
+      max-width: 540px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+
+    .hero .cta-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 32px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+    }
+
+    /* ── Stats row ── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin-top: 56px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat .num {
+      font-size: 28px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .stat .label {
+      font-size: 13px;
+      color: var(--text-dimmer);
+      margin-top: 2px;
+    }
+
+    /* ── Problem → Solution ── */
+    .problem-solution {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .ps-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .ps-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .ps-card.problem h3 { color: #ef4444; }
+    .ps-card.solution h3 { color: var(--accent); }
+
+    .ps-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .ps-card li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 15px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .ps-card li .icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    .ps-card.problem li .icon { color: #ef4444; }
+    .ps-card.solution li .icon { color: var(--accent); }
+
+    /* ── Section headers ── */
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      margin-bottom: 12px;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: var(--text-dim);
+      max-width: 560px;
+      margin-bottom: 48px;
+    }
+
+    /* ── Features grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      transition: all 0.2s;
+    }
+
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .fi-blue { background: var(--blue-dim); }
+    .fi-green { background: var(--accent-glow); }
+    .fi-purple { background: var(--purple-dim); }
+    .fi-orange { background: var(--orange-dim); }
+
+    /* ── How it works ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      position: relative;
+    }
+
+    .step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      border: 1px solid rgba(34,197,94,0.25);
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .step h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .step-arrow {
+      display: none;
+    }
+
+    /* ── Code block ── */
+    .code-block {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 32px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .code-block pre {
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-dim);
+      overflow-x: auto;
+    }
+
+    .code-block .comment { color: var(--text-dimmer); }
+    .code-block .cmd { color: var(--accent); }
+
+    /* ── Use cases ── */
+    .usecases-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .usecase {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      transition: all 0.2s;
+    }
+
+    .usecase:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+    }
+
+    .usecase .uc-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .usecase h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .usecase p {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── Final CTA ── */
+    .final-cta {
+      text-align: center;
+      padding: 100px 0;
+      position: relative;
+    }
+
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .final-cta h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+
+    .final-cta .subtitle {
+      font-size: 17px;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Chat mockup ── */
+    .chat-mock {
+      max-width: 420px;
+      margin: 48px auto 0;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chat-header .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .chat-header span {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .chat-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .chat-msg.user {
+      background: var(--blue-dim);
+      border: 1px solid rgba(59,130,246,0.15);
+      align-self: flex-end;
+      color: var(--text);
+    }
+
+    .chat-msg.bot {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      align-self: flex-start;
+      color: var(--text-dim);
+    }
+
+    .chat-msg .bot-label {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      font-size: 13px;
+      color: var(--text-dimmer);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── Tech stack pills ── */
+    .tech-pills {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .pill {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      section { padding: 56px 0; }
+
+      .problem-solution,
+      .usecases-grid { grid-template-columns: 1fr; }
+
+      .features-grid { grid-template-columns: 1fr 1fr; }
+
+      .steps { grid-template-columns: 1fr 1fr; }
+
+      .stats { gap: 32px; }
+
+      nav .links a:not(.nav-cta) { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAV ── -->
+  <nav>
+    <div class="inner">
+      <a href="#" class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Open<span>Claw</span> Zalo
+      </a>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#use-cases">Use Cases</a>
+        <a href="https://github.com/monasprox/opclaw-zalo">GitHub</a>
+        <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="nav-cta" target="_blank" rel="noopener">Join Group</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="container">
+      <div class="badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Open Source &middot; MIT License
+      </div>
+
+      <h1>
+        Build <span class="highlight">AI-Powered Zalo</span><br>Automation in Minutes
+      </h1>
+
+      <p class="subtitle">
+        Connect your Zalo personal account to OpenClaw's agent framework.
+        147 API actions. QR login. Groups & DMs. Zero boilerplate.
+      </p>
+
+      <div class="cta-row">
+        <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4"/></svg>
+          Join Zalo Group
+        </a>
+        <a href="https://github.com/monasprox/opclaw-zalo" class="btn btn-secondary" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.509 11.509 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <!-- Chat mockup -->
+      <div class="chat-mock">
+        <div class="chat-header">
+          <div class="dot"></div>
+          <span>Team DevOps — Zalo Group</span>
+        </div>
+        <div class="chat-body">
+          <div class="chat-msg user">@OpenClaw tạo poll "Deploy lúc nào?" options: "Thứ 6", "Thứ 7", "CN"</div>
+          <div class="chat-msg bot">
+            <div class="bot-label">🤖 OpenClaw</div>
+            ✅ Poll created in group "Team DevOps"<br>
+            &nbsp;&nbsp;📊 Deploy lúc nào?<br>
+            &nbsp;&nbsp;1. Thứ 6<br>
+            &nbsp;&nbsp;2. Thứ 7<br>
+            &nbsp;&nbsp;3. CN
+          </div>
+          <div class="chat-msg user">@OpenClaw gửi file /reports/q1-2026.pdf cho nhóm "Ban giám đốc"</div>
+          <div class="chat-msg bot">
+            <div class="bot-label">🤖 OpenClaw</div>
+            ✅ File sent: q1-2026.pdf (2.4 MB)<br>
+            → Group: Ban giám đốc
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="num">147</div>
+          <div class="label">API Actions</div>
+        </div>
+        <div class="stat">
+          <div class="num">v2.0</div>
+          <div class="label">Stable Release</div>
+        </div>
+        <div class="stat">
+          <div class="num">0</div>
+          <div class="label">Build Steps</div>
+        </div>
+        <div class="stat">
+          <div class="num">MIT</div>
+          <div class="label">License</div>
+        </div>
+      </div>
+
+      <div class="tech-pills">
+        <span class="pill">TypeScript</span>
+        <span class="pill">zca-js v2.1</span>
+        <span class="pill">Node.js ≥22</span>
+        <span class="pill">OpenClaw ≥2026.2</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PROBLEM → SOLUTION ── -->
+  <section id="problem">
+    <div class="container">
+      <div class="section-label">Why This Exists</div>
+      <div class="section-title">Zalo automation is hard. We fixed that.</div>
+      <div class="section-desc">75M users, zero official bot API for personal accounts. Until now.</div>
+
+      <div class="problem-solution">
+        <div class="ps-card problem">
+          <h3>✕ Without OpenClaw</h3>
+          <ul>
+            <li><span class="icon">✕</span> No official bot API for personal Zalo</li>
+            <li><span class="icon">✕</span> Reverse-engineering protocol changes</li>
+            <li><span class="icon">✕</span> Manual cookie management & session handling</li>
+            <li><span class="icon">✕</span> No access control — anyone can trigger actions</li>
+            <li><span class="icon">✕</span> Building from scratch every time</li>
+          </ul>
+        </div>
+        <div class="ps-card solution">
+          <h3>✓ With OpenClaw Zalo Plugin</h3>
+          <ul>
+            <li><span class="icon">✓</span> QR scan login, auto-persist credentials</li>
+            <li><span class="icon">✓</span> 147 pre-built actions — messaging, groups, polls, reminders</li>
+            <li><span class="icon">✓</span> Built-in access control: allow/deny lists, pairing mode</li>
+            <li><span class="icon">✓</span> Mention gating, output filtering, thread sandbox</li>
+            <li><span class="icon">✓</span> Event-driven, plugin architecture, zero build step</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ── -->
+  <section id="features">
+    <div class="container">
+      <div class="section-label">Features</div>
+      <div class="section-title">Everything you need to automate Zalo</div>
+      <div class="section-desc">147 actions across 15 categories. Fully typed. Auto-resolves names to IDs.</div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon fi-blue">💬</div>
+          <h4>Rich Messaging</h4>
+          <p>Text, images, files, videos, voice, stickers, cards. Bold, italic, underline, colors. Urgency levels.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-green">👥</div>
+          <h4>Group Management</h4>
+          <p>Create groups, manage members, admins, settings, invite links, pending approvals. 22 group actions.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-purple">🔒</div>
+          <h4>Access Control</h4>
+          <p>DM policies (open/pairing/allowlist/disabled). Per-group allow/deny lists. Mention gating.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-orange">📊</div>
+          <h4>Polls & Reminders</h4>
+          <p>Create polls with multi-choice, anonymous voting, expiry. Set reminders with repeat schedules.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-blue">🤖</div>
+          <h4>AI Agent Integration</h4>
+          <p>Direct integration with OpenClaw agent framework. Context assembly, quote extraction, image analysis.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-green">⚡</div>
+          <h4>Zero Build Step</h4>
+          <p>TypeScript loaded directly by OpenClaw runtime. No compilation. Edit, restart, done.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-purple">💼</div>
+          <h4>Business Tools</h4>
+          <p>Product catalogs, quick messages, auto-replies, contact labels, notes. Full commerce support.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-orange">🛡️</div>
+          <h4>Safety Built-In</h4>
+          <p>Output filtering, thread sandboxing, sensitive content redaction. Block users at Zalo or bot level.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon fi-blue">↩️</div>
+          <h4>Reply Context</h4>
+          <p>When users reply to messages, AI receives the quoted text + sender. Full conversation context.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── -->
+  <section id="how-it-works">
+    <div class="container">
+      <div class="section-label">How It Works</div>
+      <div class="section-title">Four steps to Zalo automation</div>
+      <div class="section-desc">From zero to running bot in under 5 minutes.</div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h4>Install Plugin</h4>
+          <p>Clone repo, npm install, register with OpenClaw</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h4>Scan QR</h4>
+          <p>Login with your Zalo app. Credentials auto-saved.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h4>Configure</h4>
+          <p>Set DM policy, group rules, mention gating in JSON config.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h4>Automate</h4>
+          <p>AI agent handles messages, executes 147 actions on your behalf.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <pre><span class="comment"># Install</span>
+<span class="cmd">git clone</span> https://github.com/monasprox/opclaw-zalo.git
+<span class="cmd">cd</span> opclaw-zalo && <span class="cmd">npm install</span>
+
+<span class="comment"># Register & start</span>
+<span class="cmd">openclaw plugins install</span> --link .
+<span class="cmd">openclaw gateway restart</span>
+
+<span class="comment"># Login via QR</span>
+<span class="cmd">openclaw channels login</span> --channel opclaw-zalo</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── USE CASES ── -->
+  <section id="use-cases">
+    <div class="container">
+      <div class="section-label">Use Cases</div>
+      <div class="section-title">What can you build?</div>
+      <div class="section-desc">Real-world automation scenarios powered by the plugin.</div>
+
+      <div class="usecases-grid">
+        <div class="usecase">
+          <div class="uc-icon">🎧</div>
+          <h4>Customer Support Bot</h4>
+          <p>Auto-reply to DMs, route queries to team groups, send quick response templates. Handle friend requests automatically.</p>
+        </div>
+        <div class="usecase">
+          <div class="uc-icon">📈</div>
+          <h4>Lead Capture from Zalo</h4>
+          <p>Find users by phone, send friend requests, track status. Manage product catalogs and share with prospects.</p>
+        </div>
+        <div class="usecase">
+          <div class="uc-icon">🏢</div>
+          <h4>Internal Team Bot</h4>
+          <p>Create polls for decisions, set reminders for meetings, manage group settings. Mention-gated — only responds when called.</p>
+        </div>
+        <div class="usecase">
+          <div class="uc-icon">🤖</div>
+          <h4>AI Assistant in Group Chat</h4>
+          <p>Full AI agent in Zalo groups. Understands reply context, processes images, executes complex multi-step tasks via natural language.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FINAL CTA ── -->
+  <section class="final-cta">
+    <div class="container">
+      <div class="section-label">Get Started</div>
+      <h2>Start Building with<br>OpenClaw Zalo Today</h2>
+      <p class="subtitle">Join the community. Get the plugin, updates, real-world automation use cases, and direct support.</p>
+
+      <div class="cta-row">
+        <a href="https://zalo.me/g/gigr4cnahvidpewxk74z" class="btn btn-primary" target="_blank" rel="noopener" style="font-size: 17px; padding: 14px 32px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4"/></svg>
+          Join Zalo Group Now
+        </a>
+        <a href="https://github.com/monasprox/opclaw-zalo" class="btn btn-secondary" target="_blank" rel="noopener">
+          View Source on GitHub
+        </a>
+      </div>
+
+      <div class="tech-pills" style="margin-top: 40px;">
+        <span class="pill">Open Source</span>
+        <span class="pill">MIT License</span>
+        <span class="pill">147 Actions</span>
+        <span class="pill">Zero Build Step</span>
+        <span class="pill">TypeScript</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-left">
+          © 2026 OpenClaw Zalo Plugin &middot; MIT License &middot; monasprox
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/monasprox/opclaw-zalo" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/monasprox/opclaw-zalo/blob/main/docs/agent-install.md" target="_blank" rel="noopener">Docs</a>
+          <a href="https://github.com/monasprox/opclaw-zalo/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
+          <a href="https://github.com/monasprox/opclaw-zalo/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
