@@ -11,6 +11,8 @@
 
 ---
 
+🚀 Join the Zalo Community. Get the plugin, updates, and real-world automation use cases. https://zalo.me/g/gigr4cnahvidpewxk74z
+
 ## Why
 
 Zalo is Vietnam's dominant messaging platform (~75M users) but has no official bot API for personal accounts. This plugin bridges that gap by connecting a Zalo personal account to OpenClaw's agent framework — enabling AI-powered conversations, tool execution, and automation directly through Zalo chat.
