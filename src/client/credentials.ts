@@ -10,9 +10,9 @@ import { readFileSync, writeFileSync, unlinkSync, existsSync, chmodSync, mkdirSy
 import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 
-const CREDENTIALS_PATH = join(homedir(), ".openclaw", "opclaw-zalo-credentials.json");
+const CREDENTIALS_PATH = join(homedir(), ".openclaw", "zaloclaw-credentials.json");
 
-export type OpclawZaloCredentials = {
+export type ZaloClawCredentials = {
   imei: string;
   cookie: unknown;
   userAgent: string;
@@ -23,7 +23,7 @@ export type OpclawZaloCredentials = {
  * Save credentials to disk with restrictive file permissions.
  * [H1] chmod 0600 — only the file owner can read/write.
  */
-export function saveCredentials(data: OpclawZaloCredentials): void {
+export function saveCredentials(data: ZaloClawCredentials): void {
   const dir = dirname(CREDENTIALS_PATH);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true, mode: 0o700 });
@@ -35,13 +35,13 @@ export function saveCredentials(data: OpclawZaloCredentials): void {
   }
 }
 
-export function loadCredentials(): OpclawZaloCredentials | null {
+export function loadCredentials(): ZaloClawCredentials | null {
   if (!existsSync(CREDENTIALS_PATH)) {
     return null;
   }
   try {
     const raw = readFileSync(CREDENTIALS_PATH, "utf-8");
-    return JSON.parse(raw) as OpclawZaloCredentials;
+    return JSON.parse(raw) as ZaloClawCredentials;
   } catch {
     return null;
   }

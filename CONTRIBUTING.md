@@ -1,12 +1,12 @@
-# Contributing to opclaw-zalo
+# Contributing to zaloclaw
 
 Thanks for your interest in contributing! Here's how to get started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/monasprox/opclaw-zalo.git
-cd opclaw-zalo
+git clone https://github.com/monasprox/zaloclaw.git
+cd zaloclaw
 npm install
 ```
 
@@ -63,4 +63,4 @@ src/
 
 ## Reporting Issues
 
-Use [GitHub Issues](https://github.com/monasprox/opclaw-zalo/issues) with the provided templates.
+Use [GitHub Issues](https://github.com/monasprox/zaloclaw/issues) with the provided templates.

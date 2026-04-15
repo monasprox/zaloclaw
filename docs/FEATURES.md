@@ -1,4 +1,4 @@
-# opclaw-zalo — Feature Spec & API Notes
+# zaloclaw — Feature Spec & API Notes
 
 > Reference: [zca-js v2.1.2](https://zca-js.tdung.com/) — Official API docs
 > Target: OpenClaw 2026.4.x channel plugin

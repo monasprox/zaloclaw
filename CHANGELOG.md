@@ -56,7 +56,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.0.0] — 2026-04-13
 
 ### Added
-- Initial release as `opclaw-zalo` (renamed from `zalo-personal`)
+- Initial release as `zaloclaw` (renamed from `zalo-personal`)
 - Full Zalo personal account integration via zca-js v2.1.2
 - 130+ agent tool actions (messaging, friends, groups, polls, reminders, profile, catalogs, etc.)
 - QR code login flow with credential persistence

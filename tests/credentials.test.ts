@@ -12,8 +12,8 @@ import { saveCredentials, loadCredentials, deleteCredentials, hasCredentials } f
 const ORIGINAL_HOME = os.homedir();
 
 describe("credentials", () => {
-  const testDir = path.join(os.tmpdir(), `opclaw-test-creds-${Date.now()}`);
-  const credPath = path.join(testDir, ".openclaw", "opclaw-zalo-credentials.json");
+  const testDir = path.join(os.tmpdir(), `zaloclaw-test-creds-${Date.now()}`);
+  const credPath = path.join(testDir, ".openclaw", "zaloclaw-credentials.json");
 
   // Note: We can't easily override the credential path since it uses homedir().
   // These tests verify the module's exported behavior.
@@ -31,7 +31,7 @@ describe("credentials", () => {
     // Only run on systems where we can safely test
     if (process.platform === "win32") return;
 
-    const tmpCredDir = path.join(os.tmpdir(), `opclaw-cred-test-${Date.now()}`);
+    const tmpCredDir = path.join(os.tmpdir(), `zaloclaw-cred-test-${Date.now()}`);
     const tmpCredFile = path.join(tmpCredDir, "test-creds.json");
     fs.mkdirSync(tmpCredDir, { recursive: true, mode: 0o700 });
 

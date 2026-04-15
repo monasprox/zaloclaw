@@ -1,10 +1,10 @@
 {
-  "id": "opclaw-zalo",
+  "id": "zaloclaw",
   "channels": [
-    "opclaw-zalo"
+    "zaloclaw"
   ],
   "channelConfigs": {
-    "opclaw-zalo": {
+    "zaloclaw": {
       "schema": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",

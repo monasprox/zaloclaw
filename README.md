@@ -1,6 +1,6 @@
-# opclaw-zalo
+# zaloclaw
 
-[![CI](https://github.com/monasprox/opclaw-zalo/actions/workflows/ci.yml/badge.svg)](https://github.com/monasprox/opclaw-zalo/actions/workflows/ci.yml)
+[![CI](https://github.com/monasprox/zaloclaw/actions/workflows/ci.yml/badge.svg)](https://github.com/monasprox/zaloclaw/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-%E2%89%A52026.2.0-orange)](https://github.com/nicholasxuu/openclaw)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-green)](https://nodejs.org/)
@@ -58,13 +58,13 @@ Zalo is Vietnam's dominant messaging platform (~75M users) but has no official b
 
 ```bash
 # Clone the plugin
-git clone https://github.com/monasprox/opclaw-zalo.git /path/to/opclaw-zalo
+git clone https://github.com/monasprox/zaloclaw.git /path/to/zaloclaw
 
 # Install dependencies
-cd /path/to/opclaw-zalo && npm install
+cd /path/to/zaloclaw && npm install
 
 # Register with OpenClaw
-openclaw plugins install --link /path/to/opclaw-zalo
+openclaw plugins install --link /path/to/zaloclaw
 
 # Restart gateway
 openclaw gateway restart
@@ -74,7 +74,7 @@ openclaw gateway restart
 
 ```bash
 # Show QR code in terminal — scan with Zalo app
-openclaw channels login --channel opclaw-zalo
+openclaw channels login --channel zaloclaw
 ```
 
 After scanning, credentials are saved. Subsequent gateway restarts auto-login.
@@ -85,20 +85,20 @@ After scanning, credentials are saved. Subsequent gateway restarts auto-login.
 openclaw status
 ```
 
-You should see `opclaw-zalo` listed under channels with status `ON`.
+You should see `zaloclaw` listed under channels with status `ON`.
 
 ---
 
 ## Configuration
 
-All configuration lives in `~/.openclaw/openclaw.json` under `channels.opclaw-zalo`.
+All configuration lives in `~/.openclaw/openclaw.json` under `channels.zaloclaw`.
 
 ### Minimal Config
 
 ```jsonc
 {
   "channels": {
-    "opclaw-zalo": {
+    "zaloclaw": {
       "accounts": {
         "default": {
           "enabled": true
@@ -114,7 +114,7 @@ All configuration lives in `~/.openclaw/openclaw.json` under `channels.opclaw-za
 ```jsonc
 {
   "channels": {
-    "opclaw-zalo": {
+    "zaloclaw": {
       "accounts": {
         "default": {
           "enabled": true,
@@ -190,7 +190,7 @@ All configuration lives in `~/.openclaw/openclaw.json` under `channels.opclaw-za
 
 ## Agent Tools
 
-The plugin exposes **147 actions** as a single `opclaw-zalo` agent tool. The agent selects the action by name. Names and group names are auto-resolved to Zalo numeric IDs.
+The plugin exposes **147 actions** as a single `zaloclaw` agent tool. The agent selects the action by name. Names and group names are auto-resolved to Zalo numeric IDs.
 
 ### Messaging (16 actions)
 
@@ -379,7 +379,7 @@ The plugin exposes **147 actions** as a single `opclaw-zalo` agent tool. The age
 ## Architecture
 
 ```
-opclaw-zalo/
+zaloclaw/
 ├── index.ts                    → Plugin entry point & tool registration
 ├── package.json
 ├── openclaw.plugin.json        → Plugin manifest (JSON Schema for config)

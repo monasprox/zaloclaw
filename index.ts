@@ -1,22 +1,22 @@
 import type { AnyAgentTool, OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
-import { opclawZaloPlugin } from "./src/channel/channel.js";
-import { setOpclawZaloRuntime } from "./src/runtime/runtime.js";
-import { OpclawZaloToolSchema, executeOpclawZaloTool } from "./src/tools/tool.js";
+import { zaloClawPlugin } from "./src/channel/channel.js";
+import { setZaloClawRuntime } from "./src/runtime/runtime.js";
+import { ZaloClawToolSchema, executeZaloClawTool } from "./src/tools/tool.js";
 
 const plugin = {
-  id: "opclaw-zalo",
+  id: "zaloclaw",
   name: "OpenClaw Zalo",
   description: "Zalo personal account messaging via zca-js library",
   configSchema: emptyPluginConfigSchema(),
   register(api: OpenClawPluginApi) {
-    setOpclawZaloRuntime(api.runtime);
+    setZaloClawRuntime(api.runtime);
     // Register channel plugin (for onboarding & gateway)
-    api.registerChannel({ plugin: opclawZaloPlugin });
+    api.registerChannel({ plugin: zaloClawPlugin });
 
     // Register agent tool
     api.registerTool({
-      name: "opclaw-zalo",
+      name: "zaloclaw",
       label: "OpenClaw Zalo",
       description:
         "Complete Zalo personal account management via zca-js (130 actions). " +
@@ -45,8 +45,8 @@ const plugin = {
         "Block: block/unblock-user (OpenClaw), zalo-block/unblock-user (Zalo-level), block-view-feed. " +
         "Misc: search-stickers, parse-link, send-report, get-biz-account. " +
         "Names are auto-resolved to IDs.",
-      parameters: OpclawZaloToolSchema,
-      execute: executeOpclawZaloTool,
+      parameters: ZaloClawToolSchema,
+      execute: executeZaloClawTool,
     } as AnyAgentTool);
   },
 };

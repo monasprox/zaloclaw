@@ -16,20 +16,20 @@ import {
   normalizeAccountId,
   setAccountEnabledInConfigSection,
 } from "openclaw/plugin-sdk/channel-plugin-common";
-import type { OpclawZaloFriend, OpclawZaloGroup, OpclawZaloUserInfo } from "../runtime/types.js";
+import type { ZaloClawFriend, ZaloClawGroup, ZaloClawUserInfo } from "../runtime/types.js";
 import {
-  listOpclawZaloAccountIds,
-  resolveDefaultOpclawZaloAccountId,
-  resolveOpclawZaloAccountSync,
-  getOpclawZaloUserInfo,
-  checkOpclawZaloAuthenticated,
-  type ResolvedOpclawZaloAccount,
+  listZaloClawAccountIds,
+  resolveDefaultZaloClawAccountId,
+  resolveZaloClawAccountSync,
+  getZaloClawUserInfo,
+  checkZaloClawAuthenticated,
+  type ResolvedZaloClawAccount,
 } from "../client/accounts.js";
-import { OpclawZaloConfigSchema, OpclawZaloChannelConfigSchema } from "../config/config-schema.js";
-import { opclawZaloOnboardingAdapter } from "./onboarding.js";
-import { probeOpclawZalo } from "./probe.js";
-import { sendMessageOpclawZalo, isLocalFilePath } from "./send.js";
-import { collectOpclawZaloStatusIssues } from "../runtime/status-issues.js";
+import { ZaloClawConfigSchema, ZaloClawChannelConfigSchema } from "../config/config-schema.js";
+import { zaloClawOnboardingAdapter } from "./onboarding.js";
+import { probeZaloClaw } from "./probe.js";
+import { sendMessageZaloClaw, isLocalFilePath } from "./send.js";
+import { collectZaloClawStatusIssues } from "../runtime/status-issues.js";
 import { hasStoredCredentials, loginWithQR } from "../client/zalo-client.js";
 import { LoginQRCallbackEventType } from "zca-js";
 import { displayQRFromPNG } from "../client/qr-display.js";
@@ -37,11 +37,11 @@ import * as fs from "fs";
 import * as readline from "readline";
 
 const meta = {
-  id: "opclaw-zalo",
+  id: "zaloclaw",
   label: "OpenClaw Zalo",
   selectionLabel: "OpenClaw Zalo Account",
-  docsPath: "/channels/opclaw-zalo",
-  docsLabel: "opclaw-zalo",
+  docsPath: "/channels/zaloclaw",
+  docsLabel: "zaloclaw",
   blurb: "Zalo personal account via zca-js library (no CLI needed).",
   aliases: ["oz"],
   order: 86,
@@ -76,8 +76,8 @@ function mapGroup(params: {
   };
 }
 
-function resolveOpclawZaloGroupRequireMention(params: ChannelGroupContext): boolean {
-  const account = resolveOpclawZaloAccountSync({
+function resolveZaloClawGroupRequireMention(params: ChannelGroupContext): boolean {
+  const account = resolveZaloClawAccountSync({
     cfg: params.cfg,
     accountId: params.accountId ?? undefined,
   });
@@ -92,10 +92,10 @@ function resolveOpclawZaloGroupRequireMention(params: ChannelGroupContext): bool
   return true;
 }
 
-function resolveOpclawZaloGroupToolPolicy(
+function resolveZaloClawGroupToolPolicy(
   params: ChannelGroupContext,
 ): GroupToolPolicyConfig | undefined {
-  const account = resolveOpclawZaloAccountSync({
+  const account = resolveZaloClawAccountSync({
     cfg: params.cfg,
     accountId: params.accountId ?? undefined,
   });
@@ -111,10 +111,10 @@ function resolveOpclawZaloGroupToolPolicy(
 }
 
 
-export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
-  id: "opclaw-zalo",
+export const zaloClawPlugin: ChannelPlugin<ResolvedZaloClawAccount> = {
+  id: "zaloclaw",
   meta,
-  setupWizard: opclawZaloOnboardingAdapter,
+  setupWizard: zaloClawOnboardingAdapter,
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
@@ -124,16 +124,16 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
     nativeCommands: false,
     blockStreaming: true,
   },
-  reload: { configPrefixes: ["channels['opclaw-zalo']"] },
-  configSchema: OpclawZaloChannelConfigSchema,
+  reload: { configPrefixes: ["channels['zaloclaw']"] },
+  configSchema: ZaloClawChannelConfigSchema,
   config: {
-    listAccountIds: (cfg) => listOpclawZaloAccountIds(cfg),
-    resolveAccount: (cfg, accountId) => resolveOpclawZaloAccountSync({ cfg, accountId }),
-    defaultAccountId: (cfg) => resolveDefaultOpclawZaloAccountId(cfg),
+    listAccountIds: (cfg) => listZaloClawAccountIds(cfg),
+    resolveAccount: (cfg, accountId) => resolveZaloClawAccountSync({ cfg, accountId }),
+    defaultAccountId: (cfg) => resolveDefaultZaloClawAccountId(cfg),
     setAccountEnabled: ({ cfg, accountId, enabled }) =>
       setAccountEnabledInConfigSection({
         cfg,
-        sectionKey: "opclaw-zalo",
+        sectionKey: "zaloclaw",
         accountId,
         enabled,
         allowTopLevel: true,
@@ -141,7 +141,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
     deleteAccount: ({ cfg, accountId }) =>
       deleteAccountFromConfigSection({
         cfg,
-        sectionKey: "opclaw-zalo",
+        sectionKey: "zaloclaw",
         accountId,
         clearBaseFields: [
           "name",
@@ -160,36 +160,36 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       configured: hasStoredCredentials(),
     }),
     resolveAllowFrom: ({ cfg, accountId }) =>
-      (resolveOpclawZaloAccountSync({ cfg, accountId }).config.allowFrom ?? []).map((entry) =>
+      (resolveZaloClawAccountSync({ cfg, accountId }).config.allowFrom ?? []).map((entry) =>
         String(entry),
       ),
     formatAllowFrom: ({ allowFrom }) =>
       allowFrom
         .map((entry) => String(entry).trim())
         .filter(Boolean)
-        .map((entry) => entry.replace(/^(opclaw-zalo|oz):/i, ""))
+        .map((entry) => entry.replace(/^(zaloclaw|oz):/i, ""))
         .map((entry) => entry.toLowerCase()),
   },
   security: {
     resolveDmPolicy: ({ cfg, accountId, account }) => {
       const resolvedAccountId = accountId ?? account.accountId ?? DEFAULT_ACCOUNT_ID;
-      const useAccountPath = Boolean(cfg.channels?.['opclaw-zalo']?.accounts?.[resolvedAccountId]);
+      const useAccountPath = Boolean(cfg.channels?.['zaloclaw']?.accounts?.[resolvedAccountId]);
       const basePath = useAccountPath
-        ? `channels['opclaw-zalo'].accounts.${resolvedAccountId}.`
-        : "channels['opclaw-zalo'].";
+        ? `channels['zaloclaw'].accounts.${resolvedAccountId}.`
+        : "channels['zaloclaw'].";
       return {
         policy: account.config.dmPolicy ?? "open",
         allowFrom: account.config.allowFrom ?? ["*"],
         policyPath: `${basePath}dmPolicy`,
         allowFromPath: basePath,
-        approveHint: formatPairingApproveHint("opclaw-zalo"),
-        normalizeEntry: (raw) => raw.replace(/^(opclaw-zalo|oz):/i, ""),
+        approveHint: formatPairingApproveHint("zaloclaw"),
+        normalizeEntry: (raw) => raw.replace(/^(zaloclaw|oz):/i, ""),
       };
     },
   },
   groups: {
-    resolveRequireMention: resolveOpclawZaloGroupRequireMention,
-    resolveToolPolicy: resolveOpclawZaloGroupToolPolicy,
+    resolveRequireMention: resolveZaloClawGroupRequireMention,
+    resolveToolPolicy: resolveZaloClawGroupToolPolicy,
   },
   agentPrompt: {
     messageToolHints: () => [
@@ -202,25 +202,25 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
   setup: {
     resolveAccountId: ({ accountId }) => normalizeAccountId(accountId),
     applyAccountName: ({ cfg, accountId, name }) =>
-      applyAccountNameToChannelSection({ cfg, channelKey: "opclaw-zalo", accountId, name }),
+      applyAccountNameToChannelSection({ cfg, channelKey: "zaloclaw", accountId, name }),
     validateInput: () => null,
     applyAccountConfig: ({ cfg, accountId, input }) => {
       const namedConfig = applyAccountNameToChannelSection({
         cfg,
-        channelKey: "opclaw-zalo",
+        channelKey: "zaloclaw",
         accountId,
         name: input.name,
       });
       const next =
         accountId !== DEFAULT_ACCOUNT_ID
-          ? migrateBaseNameToDefaultAccount({ cfg: namedConfig, channelKey: "opclaw-zalo" })
+          ? migrateBaseNameToDefaultAccount({ cfg: namedConfig, channelKey: "zaloclaw" })
           : namedConfig;
       if (accountId === DEFAULT_ACCOUNT_ID) {
         return {
           ...next,
           channels: {
             ...next.channels,
-            'opclaw-zalo': { ...next.channels?.['opclaw-zalo'], enabled: true },
+            'zaloclaw': { ...next.channels?.['zaloclaw'], enabled: true },
           },
         } as OpenClawConfig;
       }
@@ -228,13 +228,13 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
         ...next,
         channels: {
           ...next.channels,
-          'opclaw-zalo': {
-            ...next.channels?.['opclaw-zalo'],
+          'zaloclaw': {
+            ...next.channels?.['zaloclaw'],
             enabled: true,
             accounts: {
-              ...next.channels?.['opclaw-zalo']?.accounts,
+              ...next.channels?.['zaloclaw']?.accounts,
               [accountId]: {
-                ...next.channels?.['opclaw-zalo']?.accounts?.[accountId],
+                ...next.channels?.['zaloclaw']?.accounts?.[accountId],
                 enabled: true,
               },
             },
@@ -247,7 +247,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
     normalizeTarget: (raw) => {
       const trimmed = raw?.trim();
       if (!trimmed) return undefined;
-      return trimmed.replace(/^(opclaw-zalo|oz):/i, "");
+      return trimmed.replace(/^(zaloclaw|oz):/i, "");
     },
     targetResolver: {
       looksLikeId: (raw) => {
@@ -412,7 +412,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
             });
           }
         } catch (err) {
-          runtime.error?.(`opclaw-zalo resolve failed: ${String(err)}`);
+          runtime.error?.(`zaloclaw resolve failed: ${String(err)}`);
           results.push({ input, resolved: false, note: "lookup failed" });
         }
       }
@@ -420,12 +420,12 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
     },
   },
   pairing: {
-    idLabel: "opclawZaloUserId",
-    normalizeAllowEntry: (entry) => entry.replace(/^(opclaw-zalo|oz):/i, ""),
+    idLabel: "zaloClawUserId",
+    normalizeAllowEntry: (entry) => entry.replace(/^(zaloclaw|oz):/i, ""),
     notifyApproval: async ({ cfg, id }) => {
-      const authenticated = await checkOpclawZaloAuthenticated();
-      if (!authenticated) throw new Error("OpclawZalo not authenticated");
-      await sendMessageOpclawZalo(id, "Your pairing request has been approved.");
+      const authenticated = await checkZaloClawAuthenticated();
+      if (!authenticated) throw new Error("ZaloClaw not authenticated");
+      await sendMessageZaloClaw(id, "Your pairing request has been approved.");
     },
   },
   auth: {
@@ -495,17 +495,17 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
     chunkerMode: "markdown",
     textChunkLimit: 2000,
     sendText: async ({ to, text, accountId, cfg }) => {
-      const account = resolveOpclawZaloAccountSync({ cfg, accountId });
-      const result = await sendMessageOpclawZalo(to, text);
+      const account = resolveZaloClawAccountSync({ cfg, accountId });
+      const result = await sendMessageZaloClaw(to, text);
       return {
-        channel: "opclaw-zalo",
+        channel: "zaloclaw",
         ok: result.ok,
         messageId: result.messageId ?? "",
         error: result.error ? new Error(result.error) : undefined,
       };
     },
     sendMedia: async ({ to, text, mediaUrl, accountId, cfg }) => {
-      const account = resolveOpclawZaloAccountSync({ cfg, accountId });
+      const account = resolveZaloClawAccountSync({ cfg, accountId });
       let options: any = {};
       if (mediaUrl && isLocalFilePath(mediaUrl) && fs.existsSync(mediaUrl)) {
         options.localPath = mediaUrl;
@@ -514,9 +514,9 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
         options.mediaUrl = mediaUrl;
         options.caption = text;
       }
-      const result = await sendMessageOpclawZalo(to, text, options);
+      const result = await sendMessageZaloClaw(to, text, options);
       return {
-        channel: "opclaw-zalo",
+        channel: "zaloclaw",
         ok: result.ok,
         messageId: result.messageId ?? "",
         error: result.error ? new Error(result.error) : undefined,
@@ -531,7 +531,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       lastStopAt: null,
       lastError: null,
     },
-    collectStatusIssues: (_accounts) => collectOpclawZaloStatusIssues(),
+    collectStatusIssues: (_accounts) => collectZaloClawStatusIssues(),
     buildChannelSummary: ({ snapshot }) => ({
       configured: snapshot.configured ?? false,
       running: snapshot.running ?? false,
@@ -541,7 +541,7 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       probe: snapshot.probe,
       lastProbeAt: snapshot.lastProbeAt ?? null,
     }),
-    probeAccount: async ({ account }) => probeOpclawZalo(),
+    probeAccount: async ({ account }) => probeZaloClaw(),
     buildAccountSnapshot: async ({ account, runtime }) => {
       const configured = hasStoredCredentials();
       return {
@@ -566,13 +566,13 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
       const account = ctx.account;
       let userLabel = "";
       try {
-        const userInfo = await getOpclawZaloUserInfo();
+        const userInfo = await getZaloClawUserInfo();
         if (userInfo?.displayName) userLabel = ` (${userInfo.displayName})`;
         ctx.setStatus({ accountId: account.accountId, profile: userInfo });
       } catch {}
-      ctx.log?.info(`[${account.accountId}] starting opclaw-zalo provider${userLabel}`);
-      const { monitorOpclawZaloProvider } = await import("./monitor.js");
-      return monitorOpclawZaloProvider({
+      ctx.log?.info(`[${account.accountId}] starting zaloclaw provider${userLabel}`);
+      const { monitorZaloClawProvider } = await import("./monitor.js");
+      return monitorZaloClawProvider({
         account,
         config: ctx.cfg,
         runtime: ctx.runtime,
@@ -608,4 +608,4 @@ export const opclawZaloPlugin: ChannelPlugin<ResolvedOpclawZaloAccount> = {
   },
 };
 
-export type { ResolvedOpclawZaloAccount };
+export type { ResolvedZaloClawAccount };

@@ -54,7 +54,7 @@ describe("validateLocalFilePath", () => {
   });
 
   it("blocks access to credential files", () => {
-    const credPath = path.join(os.homedir(), ".openclaw", "opclaw-zalo-credentials.json");
+    const credPath = path.join(os.homedir(), ".openclaw", "zaloclaw-credentials.json");
     expect(() => validateLocalFilePath(credPath)).toThrow("Access denied");
   });
 
