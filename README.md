@@ -7,7 +7,7 @@
 
 **OpenClaw channel plugin** that connects your Zalo personal account as a fully-featured messaging channel — powered by [zca-js](https://github.com/nicholasxuu/zca-js).
 
-> **🤖 For AI Agents:** See [**docs/agent-install.md**](docs/agent-install.md) — complete installation guide + detailed usage reference for all 147 actions with parameters, examples, and message flow.
+> **🤖 For AI Agents:** See [**docs/agent-help.md**](docs/agent-help.md) — complete tool usage guide for all 147 actions with parameters, examples, update process, and persistence instructions. Quick reference: [**TOOLS.md**](TOOLS.md). Installation: [**docs/agent-install.md**](docs/agent-install.md).
 
 ---
 
