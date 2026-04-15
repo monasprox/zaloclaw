@@ -17,6 +17,7 @@ Tất cả thay đổi đáng chú ý của dự án được ghi lại trong fi
 - Dịch toàn bộ tài liệu và templates sang tiếng Việt (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, issue templates)
 - Thêm `docs/agent-help.md` — hướng dẫn toàn diện cho agent
 - Thêm `TOOLS.md` — tham chiếu nhanh danh sách tools
+- **`docs/agent-install.md`**: thêm Bước 0 kiểm tra plugin hiện có (bắt buộc xác nhận với owner trước khi gỡ), cấu trúc thư mục chuẩn, hướng dẫn migration từ plugin cũ, và debug guide 6 bước (status, logs, registration, config, credentials, lockfile)
 
 ## [2.0.1] — 2026-04-14
 
