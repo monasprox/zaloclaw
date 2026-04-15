@@ -4,6 +4,20 @@ Tất cả thay đổi đáng chú ý của dự án được ghi lại trong fi
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.2] — 2026-04-15
+
+### Sửa lỗi
+- **Media scoping**: sửa lỗi reply-scoped media binding — agent không còn lấy ảnh từ buffer chung của group (cross-message media contamination). Giờ chỉ resolve ảnh từ message hiện tại và reply target
+- **CI**: tạo lại `package-lock.json` bằng npm 10 để fix `npm ci` failed (thiếu `opusscript@0.0.8`)
+
+### Tái cấu trúc
+- **Đổi tên dự án**: `opclaw-zalo` → `zaloclaw` trên toàn bộ codebase (package.json, imports, logs, configs, docs)
+
+### Tài liệu
+- Dịch toàn bộ tài liệu và templates sang tiếng Việt (README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, issue templates)
+- Thêm `docs/agent-help.md` — hướng dẫn toàn diện cho agent
+- Thêm `TOOLS.md` — tham chiếu nhanh danh sách tools
+
 ## [2.0.1] — 2026-04-14
 
 ### Sửa lỗi

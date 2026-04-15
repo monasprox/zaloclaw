@@ -1,6 +1,6 @@
 {
   "name": "zaloclaw",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "OpenClaw channel plugin for Zalo personal accounts via zca-js",
   "type": "module",
   "main": "index.ts",
