@@ -64,16 +64,14 @@ function bufferGroupMessage(groupId: string, entry: { senderName: string; conten
   groupMessageBuffer.set(groupId, buffer);
 }
 
-function consumeGroupBuffer(groupId: string): { text: string; mediaPaths: string[] } {
+function consumeGroupBuffer(groupId: string): { text: string } {
   const buffer = groupMessageBuffer.get(groupId);
-  if (!buffer || buffer.length === 0) return { text: "", mediaPaths: [] };
-  const allMediaPaths: string[] = [];
+  if (!buffer || buffer.length === 0) return { text: "" };
   const lines = buffer.map(m => {
-    if (m.localMediaPaths) allMediaPaths.push(...m.localMediaPaths);
     return `[${m.senderName}]: ${m.content}`;
   });
   groupMessageBuffer.delete(groupId);
-  return { text: lines.join("\n"), mediaPaths: allMediaPaths };
+  return { text: lines.join("\n") };
 }
 
 // --- Inbound message cache: stores last inbound message per thread for quote-reply ---
@@ -611,8 +609,7 @@ async function processMessage(
     sessionKey: route.sessionKey,
   });
 
-  const bufferedContext = isGroup ? consumeGroupBuffer(chatId) : { text: "", mediaPaths: [] };
-  const bufferedMediaPaths = bufferedContext.mediaPaths ?? [];
+  const bufferedContext = isGroup ? consumeGroupBuffer(chatId) : { text: "" };
 
   // Prepend sender context for group messages so the AI knows who sent what
   let bodyWithSender = isGroup
@@ -677,15 +674,9 @@ async function processMessage(
     logVerbose(core, runtime, `Skipping ${message.mediaUrls.length} image(s) in group ${chatId} (not mentioned)`);
   }
 
-  // Merge buffered media paths from previous group messages (images sent before @mention)
-  const allMediaPaths = [
-    ...(localMediaPaths ?? []),
-    ...(shouldProcessImages ? bufferedMediaPaths : []),
-  ];
-  if (allMediaPaths.length > (localMediaPaths?.length ?? 0) && bufferedMediaPaths.length > 0) {
-    console.log(`[opclaw-zalo] Injecting ${bufferedMediaPaths.length} buffered image(s) from group context`);
-  }
-  const effectiveLocalMediaPaths = allMediaPaths.length > 0 ? allMediaPaths : undefined;
+  // Only use images from current message (includes reply-target attachments extracted by convertToOpclawZaloMessage)
+  // No buffer media merge — prevents cross-message media contamination
+  const effectiveLocalMediaPaths = localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths : undefined;
 
   // Append media to body - use LOCAL paths if downloaded, otherwise URLs
   let bodyForEnvelope = bodyWithSender;
