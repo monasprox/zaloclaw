@@ -1,66 +1,66 @@
-# Contributing to opclaw-zalo
+# Đóng góp cho zaloclaw
 
-Thanks for your interest in contributing! Here's how to get started.
+Cảm ơn bạn đã quan tâm đóng góp! Đây là hướng dẫn để bắt đầu.
 
-## Development Setup
+## Thiết lập môi trường phát triển
 
 ```bash
-git clone https://github.com/monasprox/opclaw-zalo.git
-cd opclaw-zalo
+git clone https://github.com/monasprox/zaloclaw.git
+cd zaloclaw
 npm install
 ```
 
-No build step is required — OpenClaw loads `.ts` files directly via its runtime.
+Không cần bước build — OpenClaw tải trực tiếp file `.ts` qua runtime.
 
-### Type Checking
+### Kiểm tra kiểu
 
 ```bash
 npm run typecheck
 ```
 
-## Branch Naming
+## Quy tắc đặt tên nhánh
 
-| Type | Pattern | Example |
+| Loại | Mẫu | Ví dụ |
 |------|---------|---------|
-| Feature | `feat/<short-name>` | `feat/voice-messages` |
-| Bug fix | `fix/<short-name>` | `fix/mention-gate` |
-| Refactor | `refactor/<short-name>` | `refactor/send-module` |
-| Docs | `docs/<short-name>` | `docs/config-examples` |
+| Tính năng | `feat/<tên-ngắn>` | `feat/voice-messages` |
+| Sửa lỗi | `fix/<tên-ngắn>` | `fix/mention-gate` |
+| Tái cấu trúc | `refactor/<tên-ngắn>` | `refactor/send-module` |
+| Tài liệu | `docs/<tên-ngắn>` | `docs/config-examples` |
 
-## Commit Convention
+## Quy ước commit
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
+Tuân theo [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-feat: add voice message support
-fix: gate images on @mention in groups
-refactor: split tool.ts into domain modules
-docs: add configuration examples
-chore: update dependencies
+feat: thêm hỗ trợ tin nhắn thoại
+fix: kiểm soát ảnh qua @mention trong nhóm
+refactor: tách tool.ts thành các module theo domain
+docs: thêm ví dụ cấu hình
+chore: cập nhật dependencies
 ```
 
-## Pull Request Checklist
+## Checklist Pull Request
 
-- [ ] `npm run typecheck` passes
-- [ ] Tested locally with `openclaw gateway restart`
-- [ ] Commit messages follow conventional format
-- [ ] Updated `CHANGELOG.md` if user-facing
-- [ ] No credentials, tokens, or secrets in the diff
+- [ ] `npm run typecheck` thành công
+- [ ] Đã kiểm tra local với `openclaw gateway restart`
+- [ ] Commit messages tuân theo quy ước conventional
+- [ ] Đã cập nhật `CHANGELOG.md` nếu ảnh hưởng người dùng
+- [ ] Không có credentials, tokens, hoặc secrets trong diff
 
-## Project Structure
+## Cấu trúc dự án
 
 ```
 src/
-  channel/    → Channel lifecycle, message processing, sending
-  client/     → Zalo API client, credentials, account management
-  config/     → Config schema and runtime config management
-  tools/      → Agent tool definitions and execution
-  features/   → Standalone features (reactions, stickers, etc.)
-  parsing/    → Mention parsing, text processing
-  safety/     → Output filtering, thread sandboxing
-  runtime/    → Runtime state, types, status reporting
+  channel/    → Vòng đời kênh, xử lý tin nhắn, gửi tin
+  client/     → API client Zalo, thông tin đăng nhập, quản lý tài khoản
+  config/     → Schema cấu hình và quản lý cấu hình runtime
+  tools/      → Định nghĩa và thực thi công cụ agent
+  features/   → Tính năng độc lập (reactions, stickers, v.v.)
+  parsing/    → Phân tích mention, xử lý văn bản
+  safety/     → Lọc đầu ra, sandbox thread
+  runtime/    → Trạng thái runtime, kiểu, báo cáo trạng thái
 ```
 
-## Reporting Issues
+## Báo cáo lỗi
 
-Use [GitHub Issues](https://github.com/monasprox/opclaw-zalo/issues) with the provided templates.
+Sử dụng [GitHub Issues](https://github.com/monasprox/zaloclaw/issues) với các template có sẵn.

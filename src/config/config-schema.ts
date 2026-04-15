@@ -36,7 +36,7 @@ const ZaloGroupConfigSchema = z.object({
 
 // --- Per-account config ---
 
-const OpclawZaloAccountSchema = z.object({
+const ZaloClawAccountSchema = z.object({
   /** Human-readable label for this account. */
   name: z.string().optional(),
   /** Enable/disable this account. */
@@ -62,14 +62,14 @@ const OpclawZaloAccountSchema = z.object({
 // --- Full channel schema (account + multi-account) ---
 
 /** The top-level OpenClaw Zalo config Zod schema (Zod 4, has toJSONSchema). */
-export const OpclawZaloConfigSchema =
-  buildCatchallMultiAccountChannelSchema(OpclawZaloAccountSchema);
+export const ZaloClawConfigSchema =
+  buildCatchallMultiAccountChannelSchema(ZaloClawAccountSchema);
 
 // --- UI-aware config schema for the control panel ---
 
 /** Pre-built config schema with uiHints for the OpenClaw control UI. */
-export const OpclawZaloChannelConfigSchema = buildChannelConfigSchema(
-  OpclawZaloConfigSchema,
+export const ZaloClawChannelConfigSchema = buildChannelConfigSchema(
+  ZaloClawConfigSchema,
   {
     uiHints: {
       "": {

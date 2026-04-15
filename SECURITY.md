@@ -1,31 +1,31 @@
-# Security Policy
+# Chính sách bảo mật
 
-## Supported Versions
+## Phiên bản được hỗ trợ
 
-| Version | Supported |
+| Phiên bản | Hỗ trợ |
 |---------|-----------|
 | 2.x     | ✅        |
 | < 2.0   | ❌        |
 
-## Reporting a Vulnerability
+## Báo cáo lỗ hổng bảo mật
 
-**Do not open a public issue for security vulnerabilities.**
+**KHÔNG mở issue công khai cho lỗ hổng bảo mật.**
 
 Email: monasprox@users.noreply.github.com
 
-Include:
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
+Vui lòng bao gồm:
+- Mô tả lỗ hổng
+- Các bước tái tạo
+- Tác động tiềm tàng
+- Đề xuất sửa (nếu có)
 
-You should receive a response within 72 hours. Critical issues will be patched and released as soon as possible.
+Bạn sẽ nhận được phản hồi trong vòng 72 giờ. Các vấn đề nghiêm trọng sẽ được vá và phát hành sớm nhất có thể.
 
-## Scope
+## Phạm vi
 
-This plugin handles:
-- Zalo API credentials (cookies, IMEI, user agent)
-- Message content routing between Zalo and OpenClaw
-- User identity resolution
+Plugin này xử lý:
+- Thông tin đăng nhập Zalo API (cookies, IMEI, user agent)
+- Định tuyến nội dung tin nhắn giữa Zalo và OpenClaw
+- Phân giải danh tính người dùng
 
-Security concerns related to credential storage, message injection, or unauthorized access are in scope.
+Các lo ngại bảo mật liên quan đến lưu trữ credentials, injection tin nhắn, hoặc truy cập trái phép nằm trong phạm vi.

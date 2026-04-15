@@ -1,65 +1,65 @@
-# Changelog
+# Nhật ký thay đổi
 
-All notable changes to this project will be documented in this file.
+Tất cả thay đổi đáng chú ý của dự án được ghi lại trong file này.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [2.0.1] — 2026-04-14
 
-### Fixed
-- **CI**: regenerate `package-lock.json` with npm 10 to resolve `npm ci` failure (`opusscript@0.0.8` missing from lock file)
+### Sửa lỗi
+- **CI**: tạo lại `package-lock.json` bằng npm 10 để khắc phục lỗi `npm ci` (`opusscript@0.0.8` thiếu trong lock file)
 
-### Security
-- **SSRF prevention**: new `safeFetch` wrapper validates all outbound URLs — blocks private/internal IPs (IPv4 + IPv6), embedded credentials, non-HTTP schemes, and DNS rebinding via hostname resolution
-- **Path traversal prevention**: `enforceSandboxPath` enforces lexical containment + symlink verification; all thread operations confined to `~/.openclaw/workspace/threads/`
-- **Local file access whitelist**: `validateLocalFilePath` restricts file operations to `~/.openclaw/workspace/`, `~/.openclaw/media/`, and system temp directories
-- **Credential hardening**: stored credentials now written with `0600` permissions; directories created with `0700`
-- **Output redaction**: lowered minimum secret length from 20 → 8 characters; regex patterns created fresh per call to prevent `lastIndex` race conditions
-- **Race condition fix**: `getApi()` uses promise memoization to prevent concurrent duplicate login attempts
-- **Image download safety**: hash-based filenames, whitelisted extensions, size limit (20 MB), path containment verification
-- **QR code isolation**: unique temp file per invocation (`crypto.randomBytes`) with `0600` permissions
-- **Thread ID sanitization**: ASCII-only alphanumeric/hyphen/underscore, max 100 characters
+### Bảo mật
+- **Phòng chống SSRF**: wrapper `safeFetch` mới kiểm tra tất cả URL gửi đi — chặn IP nội bộ/riêng tư (IPv4 + IPv6), thông tin đăng nhập nhúng, scheme không phải HTTP, và DNS rebinding qua phân giải hostname
+- **Phòng chống path traversal**: `enforceSandboxPath` áp dụng kiểm tra chứa lexical + xác minh symlink; tất cả thao tác thread giới hạn trong `~/.openclaw/workspace/threads/`
+- **Whitelist truy cập file local**: `validateLocalFilePath` giới hạn thao tác file trong `~/.openclaw/workspace/`, `~/.openclaw/media/`, và thư mục temp hệ thống
+- **Bảo mật credentials**: thông tin đăng nhập lưu trữ được ghi với quyền `0600`; thư mục tạo với quyền `0700`
+- **Lọc đầu ra**: giảm độ dài tối thiểu secret từ 20 → 8 ký tự; regex patterns tạo mới mỗi lần gọi để tránh race condition `lastIndex`
+- **Sửa race condition**: `getApi()` sử dụng promise memoization để tránh đăng nhập trùng lặp đồng thời
+- **An toàn tải ảnh**: tên file dạng hash, phần mở rộng whitelist, giới hạn 20 MB, xác minh chứa path
+- **Cô lập QR code**: file temp duy nhất mỗi lần gọi (`crypto.randomBytes`) với quyền `0600`
+- **Sanitize Thread ID**: chỉ ASCII chữ-số/gạch ngang/gạch dưới, tối đa 100 ký tự
 
-### Changed
-- **TypeScript strict mode** enabled (`tsconfig.json`)
-- **Tool parameter validation**: all local file paths and outbound URLs validated through safety modules
+### Thay đổi
+- **TypeScript strict mode** bật (`tsconfig.json`)
+- **Xác thực tham số tool**: tất cả đường dẫn file local và URL gửi đi được kiểm tra qua các module safety
 
-### Added
-- `src/safety/url-validator.ts` — SSRF-safe fetch with IP validation, DNS resolution, timeout, and size limits
-- `src/types/vendor.d.ts` — type declarations for `qrcode-terminal`, `jsqr`, and `pngjs`
-- Test framework (vitest) with 63 security and regression tests across 5 test files
-- `validateLocalFilePath`, `enforceSandboxPath`, `cleanupOldSandboxes` in thread-sandbox
-- `isPrivateIp`, `validateUrlForOutboundFetch`, `safeFetch` in url-validator
+### Thêm mới
+- `src/safety/url-validator.ts` — fetch an toàn SSRF với kiểm tra IP, phân giải DNS, timeout, và giới hạn kích thước
+- `src/types/vendor.d.ts` — khai báo kiểu cho `qrcode-terminal`, `jsqr`, và `pngjs`
+- Framework test (vitest) với 63 test bảo mật và regression trên 5 file test
+- `validateLocalFilePath`, `enforceSandboxPath`, `cleanupOldSandboxes` trong thread-sandbox
+- `isPrivateIp`, `validateUrlForOutboundFetch`, `safeFetch` trong url-validator
 
-### Fixed
-- `isLocalFilePath` in `send.ts` no longer matches URLs containing path-like substrings — now only matches actual filesystem paths
+### Sửa lỗi
+- `isLocalFilePath` trong `send.ts` không còn khớp URL chứa chuỗi con giống path — giờ chỉ khớp đường dẫn hệ thống file thực
 
 ## [2.0.0] — 2026-04-14
 
-### Changed
-- **Project restructure**: reorganized `src/` into domain-based modules (`channel/`, `client/`, `config/`, `tools/`, `parsing/`, `safety/`, `runtime/`, `features/`)
-- **Status reporting**: `collectStatusIssues` is now synchronous — fixes crash in `openclaw status` when core spreads async return value
-- **Image processing**: images in groups are only processed when bot is @mentioned; non-mention images are buffered for later context
+### Thay đổi
+- **Tái cấu trúc dự án**: sắp xếp lại `src/` thành các module theo domain (`channel/`, `client/`, `config/`, `tools/`, `parsing/`, `safety/`, `runtime/`, `features/`)
+- **Báo cáo trạng thái**: `collectStatusIssues` giờ đồng bộ — sửa crash trong `openclaw status` khi core spread giá trị async
+- **Xử lý hình ảnh**: ảnh trong nhóm chỉ được xử lý khi bot được @mention; ảnh không mention được đệm cho ngữ cảnh sau
 
-### Fixed
-- `collectStatusIssues` returned `Promise` (async) but core expected sync `StatusIssue[]` — caused `TypeError: Spread syntax requires ...iterable[Symbol.iterator]`
-- Image-only messages in groups bypassed mention gate via `!hasMedia` check — bot responded to all images regardless of @mention
-- Status scan reported "not logged in" even when bot was active — `collectStatusIssues` runs in CLI process where `apiInstance` is always null; now checks credentials on disk instead
+### Sửa lỗi
+- `collectStatusIssues` trả về `Promise` (async) nhưng core mong đợi sync `StatusIssue[]` — gây `TypeError: Spread syntax requires ...iterable[Symbol.iterator]`
+- Tin nhắn chỉ có ảnh trong nhóm bypass mention gate qua kiểm tra `!hasMedia` — bot phản hồi mọi ảnh bất kể @mention
+- Quét trạng thái báo "chưa đăng nhập" ngay cả khi bot đang hoạt động — `collectStatusIssues` chạy trong tiến trình CLI nơi `apiInstance` luôn null; giờ kiểm tra credentials trên đĩa thay thế
 
-### Added
-- `README.md` with full documentation
+### Thêm mới
+- `README.md` với tài liệu đầy đủ
 - `LICENSE` (MIT)
 - `CONTRIBUTING.md`, `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
-- `.editorconfig`, `.github/` templates and CI workflow
-- Comprehensive `.gitignore`
+- `.editorconfig`, `.github/` templates và CI workflow
+- `.gitignore` toàn diện
 
 ## [1.0.0] — 2026-04-13
 
-### Added
-- Initial release as `opclaw-zalo` (renamed from `zalo-personal`)
-- Full Zalo personal account integration via zca-js v2.1.2
-- 130+ agent tool actions (messaging, friends, groups, polls, reminders, profile, catalogs, etc.)
-- QR code login flow with credential persistence
-- Group mention gating with per-group configuration
-- DM access policies: open, pairing, allowlist, disabled
-- Features: reaction-ack, quote-reply, read-receipts, sticker support, auto-unsend, message buffering
+### Thêm mới
+- Phát hành đầu tiên với tên `zaloclaw` (đổi tên từ `zalo-personal`)
+- Tích hợp đầy đủ tài khoản Zalo cá nhân qua zca-js v2.1.2
+- 130+ agent tool actions (nhắn tin, bạn bè, nhóm, bình chọn, nhắc nhở, hồ sơ, danh mục sản phẩm, v.v.)
+- Luồng đăng nhập QR code với lưu trữ credentials tự động
+- Mention gating nhóm với cấu hình theo nhóm
+- Chính sách truy cập DM: open, pairing, allowlist, disabled
+- Tính năng: reaction-ack, quote-reply, read-receipts, hỗ trợ sticker, auto-unsend, message buffering

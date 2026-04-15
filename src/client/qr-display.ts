@@ -26,7 +26,7 @@ async function readQRFromPNG(pngPath: string): Promise<string> {
 export async function displayQRFromPNG(base64Image: string): Promise<string> {
   // [L6] Use unique temp file per invocation to prevent multi-instance conflicts
   const uniqueId = crypto.randomBytes(8).toString("hex");
-  const pngPath = path.join(os.tmpdir(), `opclaw-zalo-qr-${uniqueId}.png`);
+  const pngPath = path.join(os.tmpdir(), `zaloclaw-qr-${uniqueId}.png`);
   try {
     const buffer = Buffer.from(base64Image, "base64");
     fs.writeFileSync(pngPath, buffer, { mode: 0o600 });

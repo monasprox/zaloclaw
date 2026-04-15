@@ -310,7 +310,7 @@ function stringEnum<T extends readonly string[]>(
   });
 }
 
-export const OpclawZaloToolSchema = Type.Object(
+export const ZaloClawToolSchema = Type.Object(
   {
     action: stringEnum(ACTIONS, {
       description: `Action to perform. ${ACTIONS.length} actions available: ${ACTIONS.join(", ")}`,
@@ -457,7 +457,7 @@ type Params = {
 
 // ─── Execute ─────────────────────────────────────────────────────────────────
 
-export async function executeOpclawZaloTool(
+export async function executeZaloClawTool(
   _callId: string,
   p: Params,
   _signal?: AbortSignal,

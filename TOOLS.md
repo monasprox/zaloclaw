@@ -1,11 +1,11 @@
-# Tools Reference — opclaw-zalo
+# Tools Reference — zaloclaw
 
 > **File này dành cho AI agent đọc nhanh khi bắt đầu session mới.**
 > Đọc chi tiết đầy đủ tại [`docs/agent-help.md`](docs/agent-help.md).
 
 ## Tổng quan
 
-- **Tool name:** `opclaw-zalo`
+- **Tool name:** `zaloclaw`
 - **Số actions:** 147
 - **Cách gọi:** `{ "action": "tên-action", ...params }`
 - **Tên tự resolve:** Tên người dùng / tên nhóm → Zalo numeric ID

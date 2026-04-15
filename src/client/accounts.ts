@@ -1,24 +1,24 @@
 import type { OpenClawConfig } from "openclaw/plugin-sdk/channel-core";
 import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/channel-plugin-common";
-import type { ResolvedOpclawZaloAccount, OpclawZaloAccountConfig, OpclawZaloConfig } from "../runtime/types.js";
+import type { ResolvedZaloClawAccount, ZaloClawAccountConfig, ZaloClawConfig } from "../runtime/types.js";
 import { hasStoredCredentials } from "./zalo-client.js";
 
 function listConfiguredAccountIds(cfg: OpenClawConfig): string[] {
-  const accounts = (cfg.channels?.['opclaw-zalo'] as OpclawZaloConfig | undefined)?.accounts;
+  const accounts = (cfg.channels?.['zaloclaw'] as ZaloClawConfig | undefined)?.accounts;
   if (!accounts || typeof accounts !== "object") return [];
   return Object.keys(accounts).filter(Boolean);
 }
 
-export function listOpclawZaloAccountIds(cfg: OpenClawConfig): string[] {
+export function listZaloClawAccountIds(cfg: OpenClawConfig): string[] {
   const ids = listConfiguredAccountIds(cfg);
   if (ids.length === 0) return [DEFAULT_ACCOUNT_ID];
   return ids.toSorted((a, b) => a.localeCompare(b));
 }
 
-export function resolveDefaultOpclawZaloAccountId(cfg: OpenClawConfig): string {
-  const opclawZaloConfig = cfg.channels?.['opclaw-zalo'] as OpclawZaloConfig | undefined;
-  if (opclawZaloConfig?.defaultAccount?.trim()) return opclawZaloConfig.defaultAccount.trim();
-  const ids = listOpclawZaloAccountIds(cfg);
+export function resolveDefaultZaloClawAccountId(cfg: OpenClawConfig): string {
+  const zaloClawConfig = cfg.channels?.['zaloclaw'] as ZaloClawConfig | undefined;
+  if (zaloClawConfig?.defaultAccount?.trim()) return zaloClawConfig.defaultAccount.trim();
+  const ids = listZaloClawAccountIds(cfg);
   if (ids.includes(DEFAULT_ACCOUNT_ID)) return DEFAULT_ACCOUNT_ID;
   return ids[0] ?? DEFAULT_ACCOUNT_ID;
 }
@@ -26,61 +26,61 @@ export function resolveDefaultOpclawZaloAccountId(cfg: OpenClawConfig): string {
 function resolveAccountConfig(
   cfg: OpenClawConfig,
   accountId: string,
-): OpclawZaloAccountConfig | undefined {
-  const accounts = (cfg.channels?.['opclaw-zalo'] as OpclawZaloConfig | undefined)?.accounts;
+): ZaloClawAccountConfig | undefined {
+  const accounts = (cfg.channels?.['zaloclaw'] as ZaloClawConfig | undefined)?.accounts;
   if (!accounts || typeof accounts !== "object") return undefined;
-  return accounts[accountId] as OpclawZaloAccountConfig | undefined;
+  return accounts[accountId] as ZaloClawAccountConfig | undefined;
 }
 
-function mergeOpclawZaloAccountConfig(cfg: OpenClawConfig, accountId: string): OpclawZaloAccountConfig {
-  const raw = (cfg.channels?.['opclaw-zalo'] ?? {}) as OpclawZaloConfig;
+function mergeZaloClawAccountConfig(cfg: OpenClawConfig, accountId: string): ZaloClawAccountConfig {
+  const raw = (cfg.channels?.['zaloclaw'] ?? {}) as ZaloClawConfig;
   const { accounts: _ignored, defaultAccount: _ignored2, ...base } = raw;
   const account = resolveAccountConfig(cfg, accountId) ?? {};
   return { ...base, ...account };
 }
 
-export async function checkOpclawZaloAuthenticated(): Promise<boolean> {
+export async function checkZaloClawAuthenticated(): Promise<boolean> {
   return hasStoredCredentials();
 }
 
-export async function resolveOpclawZaloAccount(params: {
+export async function resolveZaloClawAccount(params: {
   cfg: OpenClawConfig;
   accountId?: string | null;
-}): Promise<ResolvedOpclawZaloAccount> {
+}): Promise<ResolvedZaloClawAccount> {
   const accountId = normalizeAccountId(params.accountId);
   const baseEnabled =
-    (params.cfg.channels?.['opclaw-zalo'] as OpclawZaloConfig | undefined)?.enabled !== false;
-  const merged = mergeOpclawZaloAccountConfig(params.cfg, accountId);
+    (params.cfg.channels?.['zaloclaw'] as ZaloClawConfig | undefined)?.enabled !== false;
+  const merged = mergeZaloClawAccountConfig(params.cfg, accountId);
   const accountEnabled = merged.enabled !== false;
   const enabled = baseEnabled && accountEnabled;
-  const authenticated = await checkOpclawZaloAuthenticated();
+  const authenticated = await checkZaloClawAuthenticated();
   return { accountId, name: merged.name?.trim() || undefined, enabled, authenticated, config: merged };
 }
 
-export function resolveOpclawZaloAccountSync(params: {
+export function resolveZaloClawAccountSync(params: {
   cfg: OpenClawConfig;
   accountId?: string | null;
-}): ResolvedOpclawZaloAccount {
+}): ResolvedZaloClawAccount {
   const accountId = normalizeAccountId(params.accountId);
   const baseEnabled =
-    (params.cfg.channels?.['opclaw-zalo'] as OpclawZaloConfig | undefined)?.enabled !== false;
-  const merged = mergeOpclawZaloAccountConfig(params.cfg, accountId);
+    (params.cfg.channels?.['zaloclaw'] as ZaloClawConfig | undefined)?.enabled !== false;
+  const merged = mergeZaloClawAccountConfig(params.cfg, accountId);
   const accountEnabled = merged.enabled !== false;
   const enabled = baseEnabled && accountEnabled;
   return { accountId, name: merged.name?.trim() || undefined, enabled, authenticated: false, config: merged };
 }
 
-export async function listEnabledOpclawZaloAccounts(
+export async function listEnabledZaloClawAccounts(
   cfg: OpenClawConfig,
-): Promise<ResolvedOpclawZaloAccount[]> {
-  const ids = listOpclawZaloAccountIds(cfg);
+): Promise<ResolvedZaloClawAccount[]> {
+  const ids = listZaloClawAccountIds(cfg);
   const accounts = await Promise.all(
-    ids.map((accountId) => resolveOpclawZaloAccount({ cfg, accountId })),
+    ids.map((accountId) => resolveZaloClawAccount({ cfg, accountId })),
   );
   return accounts.filter((account) => account.enabled);
 }
 
-export async function getOpclawZaloUserInfo(): Promise<{ userId?: string; displayName?: string } | null> {
+export async function getZaloClawUserInfo(): Promise<{ userId?: string; displayName?: string } | null> {
   try {
     const { getApi } = await import("./zalo-client.js");
     const api = await getApi();
@@ -92,4 +92,4 @@ export async function getOpclawZaloUserInfo(): Promise<{ userId?: string; displa
   }
 }
 
-export type { ResolvedOpclawZaloAccount } from "../runtime/types.js";
+export type { ResolvedZaloClawAccount } from "../runtime/types.js";

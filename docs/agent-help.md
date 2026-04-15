@@ -1,6 +1,6 @@
-# opclaw-zalo — Agent Help (Hướng dẫn dành cho AI Agent)
+# zaloclaw — Agent Help (Hướng dẫn dành cho AI Agent)
 
-> **Mục đích:** File này là tài liệu chuẩn để AI agent đọc và hiểu cách sử dụng toàn bộ công cụ của opclaw-zalo. Agent PHẢI đọc file này khi bắt đầu session mới hoặc sau mỗi lần restart/update.
+> **Mục đích:** File này là tài liệu chuẩn để AI agent đọc và hiểu cách sử dụng toàn bộ công cụ của zaloclaw. Agent PHẢI đọc file này khi bắt đầu session mới hoặc sau mỗi lần restart/update.
 
 ---
 
@@ -10,7 +10,7 @@
 
 1. **Đọc file này** (`docs/agent-help.md`) để nắm toàn bộ cách sử dụng công cụ
 2. **Đọc file `TOOLS.md`** (nếu có, tại root hoặc `docs/`) để xem ghi chú cập nhật mới nhất
-3. **Ghi nhớ** rằng plugin chỉ cung cấp **1 tool duy nhất** tên `opclaw-zalo` với 147 actions
+3. **Ghi nhớ** rằng plugin chỉ cung cấp **1 tool duy nhất** tên `zaloclaw` với 147 actions
 4. **Xác nhận** trạng thái đăng nhập bằng action `status` trước khi thao tác
 
 ### Lưu kiến thức để không quên sau restart
@@ -19,21 +19,21 @@ Agent PHẢI tự ghi lại kiến thức vào một trong các nơi sau để n
 
 | Phương pháp | Cách thực hiện |
 |-------------|---------------|
-| **store_memory** (ưu tiên) | Dùng tool `store_memory` để lưu các fact quan trọng về cách dùng opclaw-zalo |
+| **store_memory** (ưu tiên) | Dùng tool `store_memory` để lưu các fact quan trọng về cách dùng zaloclaw |
 | **TOOLS.md** | Tạo/cập nhật file `TOOLS.md` tại root repo với ghi chú ngắn gọn về tools đã dùng |
 | **Context file** | Nếu dùng trong OpenClaw, ghi vào file context của agent session |
 
 **Ví dụ store_memory:**
 ```
-subject: "opclaw-zalo tools"
-fact: "opclaw-zalo is a single tool with 147 actions. Call with {action: 'action-name', ...params}. Names auto-resolve to IDs."
+subject: "zaloclaw tools"
+fact: "zaloclaw is a single tool with 147 actions. Call with {action: 'action-name', ...params}. Names auto-resolve to IDs."
 ```
 
 ---
 
 ## 📋 Tổng quan Plugin
 
-- **Tên tool:** `opclaw-zalo`
+- **Tên tool:** `zaloclaw`
 - **Mô tả:** OpenClaw channel plugin kết nối tài khoản Zalo cá nhân qua zca-js
 - **Số lượng actions:** 147
 - **Cách gọi:** Truyền object JSON với field `action` + các params tương ứng
@@ -836,12 +836,12 @@ Chặn **trực tiếp trên Zalo platform** (khác với chặn trong bot confi
 
 ### Quy trình update chuẩn
 
-Khi admin hoặc user yêu cầu update plugin opclaw-zalo, agent thực hiện **tuần tự** các bước sau:
+Khi admin hoặc user yêu cầu update plugin zaloclaw, agent thực hiện **tuần tự** các bước sau:
 
 #### Bước 1: Pull code mới nhất
 
 ```bash
-cd /path/to/opclaw-zalo
+cd /path/to/zaloclaw
 git pull origin main
 ```
 
@@ -877,7 +877,7 @@ openclaw gateway restart
 openclaw status
 ```
 
-Kiểm tra `opclaw-zalo` có status `ON`.
+Kiểm tra `zaloclaw` có status `ON`.
 
 ### Xử lý khi update lỗi
 
@@ -887,12 +887,12 @@ Kiểm tra `opclaw-zalo` có status `ON`.
 | TypeScript lỗi | Kiểm tra phiên bản Node.js ≥ 22, xem lỗi cụ thể |
 | Tests fail | Đọc log lỗi, có thể do API thay đổi |
 | Gateway không restart | Kiểm tra `openclaw status`, xem logs |
-| Session expired sau update | Chạy `openclaw channels login --channel opclaw-zalo` để quét QR lại |
+| Session expired sau update | Chạy `openclaw channels login --channel zaloclaw` để quét QR lại |
 
 ### Update từ nhánh cụ thể (khi dev yêu cầu test)
 
 ```bash
-cd /path/to/opclaw-zalo
+cd /path/to/zaloclaw
 git fetch origin
 git checkout branch-name
 npm install
@@ -907,7 +907,7 @@ openclaw gateway restart
 
 ### Vấn đề
 
-Mỗi khi agent được restart hoặc session mới được tạo, agent mất toàn bộ context về cách sử dụng opclaw-zalo tools. Dù plugin đã cài, agent không biết cách gọi đúng.
+Mỗi khi agent được restart hoặc session mới được tạo, agent mất toàn bộ context về cách sử dụng zaloclaw tools. Dù plugin đã cài, agent không biết cách gọi đúng.
 
 ### Giải pháp: Luôn ghi vào TOOLS.md
 
@@ -916,10 +916,10 @@ Sau mỗi lần sử dụng tools thành công hoặc học được cách dùng
 1. **Tạo hoặc cập nhật file `TOOLS.md`** tại root repository:
 
 ```markdown
-# Tools Reference — opclaw-zalo
+# Tools Reference — zaloclaw
 
 ## Quick Reference
-- Tool name: `opclaw-zalo`
+- Tool name: `zaloclaw`
 - 147 actions available
 - Full guide: `docs/agent-help.md`
 
@@ -938,9 +938,9 @@ Sau mỗi lần sử dụng tools thành công hoặc học được cách dùng
 2. **Dùng store_memory** (nếu có) để lưu các facts:
 
 ```
-Fact: "opclaw-zalo plugin provides single tool 'opclaw-zalo' with 147 actions. Call format: {action: 'name', ...params}. Full docs at docs/agent-help.md"
-Fact: "opclaw-zalo send message: {action:'send', threadId:'id_or_name', message:'text', isGroup:bool}. Names auto-resolve to Zalo IDs."
-Fact: "opclaw-zalo update process: git pull → npm install → npm run typecheck → npm test → openclaw gateway restart → openclaw status"
+Fact: "zaloclaw plugin provides single tool 'zaloclaw' with 147 actions. Call format: {action: 'name', ...params}. Full docs at docs/agent-help.md"
+Fact: "zaloclaw send message: {action:'send', threadId:'id_or_name', message:'text', isGroup:bool}. Names auto-resolve to Zalo IDs."
+Fact: "zaloclaw update process: git pull → npm install → npm run typecheck → npm test → openclaw gateway restart → openclaw status"
 ```
 
 3. **Đọc lại docs khi bắt đầu session mới:**
@@ -951,13 +951,13 @@ Fact: "opclaw-zalo update process: git pull → npm install → npm run typechec
 
 ## ⚙️ Cấu hình Plugin
 
-File cấu hình: `~/.openclaw/openclaw.json` → `channels.opclaw-zalo`
+File cấu hình: `~/.openclaw/openclaw.json` → `channels.zaloclaw`
 
 ### Cấu hình tối thiểu
 ```jsonc
 {
   "channels": {
-    "opclaw-zalo": {
+    "zaloclaw": {
       "accounts": {
         "default": { "enabled": true }
       }
@@ -970,7 +970,7 @@ File cấu hình: `~/.openclaw/openclaw.json` → `channels.opclaw-zalo`
 ```jsonc
 {
   "channels": {
-    "opclaw-zalo": {
+    "zaloclaw": {
       "accounts": {
         "default": {
           "enabled": true,
@@ -1065,10 +1065,10 @@ Agent response → send.ts
 |--------|-----------|
 | Bot không phản hồi trong nhóm | Kiểm tra `groupPolicy` (phải là `open` hoặc nhóm trong config) + `requireMention` + `denyUsers` |
 | Bot không nhận DM | Kiểm tra `dmPolicy` (`disabled` chặn tất cả), `allowFrom` nếu `allowlist` |
-| "Session expired" | Chạy `openclaw channels login --channel opclaw-zalo` và quét QR lại |
+| "Session expired" | Chạy `openclaw channels login --channel zaloclaw` và quét QR lại |
 | Reaction/undo không hoạt động | Chỉ hoạt động với tin nhắn sau lần khởi động gần nhất. Tin cũ cần `cliMsgId` thủ công |
 | Thay đổi config không có hiệu lực | Chạy `openclaw gateway restart` sau mỗi thay đổi trong `openclaw.json` |
-| Plugin không hiện trong `openclaw status` | Chạy `openclaw plugins install --link /path/to/opclaw-zalo` rồi restart gateway |
+| Plugin không hiện trong `openclaw status` | Chạy `openclaw plugins install --link /path/to/zaloclaw` rồi restart gateway |
 
 ### Lệnh kiểm tra nhanh
 
@@ -1077,16 +1077,16 @@ Agent response → send.ts
 openclaw status
 
 # Đăng nhập lại
-openclaw channels login --channel opclaw-zalo
+openclaw channels login --channel zaloclaw
 
 # Restart gateway
 openclaw gateway restart
 
 # Kiểm tra TypeScript
-cd /path/to/opclaw-zalo && npm run typecheck
+cd /path/to/zaloclaw && npm run typecheck
 
 # Chạy tests
-cd /path/to/opclaw-zalo && npm test
+cd /path/to/zaloclaw && npm test
 ```
 
 ---
@@ -1160,7 +1160,7 @@ list-allowed-in-group, list-blocked-in-group, group-mention
 ## 🏗️ Kiến trúc Plugin (cho dev/agent hiểu code)
 
 ```
-opclaw-zalo/
+zaloclaw/
 ├── index.ts                    → Entry point & tool registration
 ├── openclaw.plugin.json        → Plugin manifest (JSON Schema config)
 ├── src/

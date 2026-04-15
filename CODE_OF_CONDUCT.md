@@ -1,25 +1,25 @@
-# Contributor Covenant Code of Conduct
+# Quy tắc ứng xử cộng đồng
 
-## Our Pledge
+## Cam kết của chúng tôi
 
-We pledge to make participation in this project a harassment-free experience for everyone.
+Chúng tôi cam kết tạo môi trường tham gia dự án không có quấy rối cho tất cả mọi người.
 
-## Our Standards
+## Tiêu chuẩn
 
-**Positive behavior:**
-- Being respectful and constructive
-- Accepting feedback gracefully
-- Focusing on what's best for the community
+**Hành vi tích cực:**
+- Tôn trọng và mang tính xây dựng
+- Tiếp nhận phản hồi một cách thiện chí
+- Tập trung vào điều tốt nhất cho cộng đồng
 
-**Unacceptable behavior:**
-- Harassment, trolling, or personal attacks
-- Publishing others' private information
-- Other conduct which could reasonably be considered inappropriate
+**Hành vi không chấp nhận:**
+- Quấy rối, troll, hoặc tấn công cá nhân
+- Công bố thông tin cá nhân của người khác
+- Các hành vi khác có thể bị coi là không phù hợp
 
-## Enforcement
+## Thực thi
 
-Instances of unacceptable behavior may be reported to the project maintainers. All complaints will be reviewed and investigated.
+Các trường hợp hành vi không chấp nhận có thể được báo cáo cho người duy trì dự án. Tất cả khiếu nại sẽ được xem xét và điều tra.
 
-## Attribution
+## Nguồn gốc
 
-This Code of Conduct is adapted from the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+Quy tắc ứng xử này được chuyển thể từ [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).

@@ -15,29 +15,29 @@ import {
 } from "openclaw/plugin-sdk/setup";
 import * as fs from "fs";
 import {
-  listOpclawZaloAccountIds,
-  resolveDefaultOpclawZaloAccountId,
-  resolveOpclawZaloAccountSync,
-  checkOpclawZaloAuthenticated,
+  listZaloClawAccountIds,
+  resolveDefaultZaloClawAccountId,
+  resolveZaloClawAccountSync,
+  checkZaloClawAuthenticated,
 } from "../client/accounts.js";
 import { hasStoredCredentials, loginWithQR } from "../client/zalo-client.js";
 import { LoginQRCallbackEventType } from "zca-js";
 import { displayQRFromPNG } from "../client/qr-display.js";
 
-const channel = "opclaw-zalo" as const;
+const channel = "zaloclaw" as const;
 
-function setOpclawZaloDmPolicy(
+function setZaloClawDmPolicy(
   cfg: OpenClawConfig,
   dmPolicy: "pairing" | "allowlist" | "open" | "disabled",
 ): OpenClawConfig {
   const allowFrom =
-    dmPolicy === "open" ? addWildcardAllowFrom(cfg.channels?.['opclaw-zalo']?.allowFrom) : undefined;
+    dmPolicy === "open" ? addWildcardAllowFrom(cfg.channels?.['zaloclaw']?.allowFrom) : undefined;
   return {
     ...cfg,
     channels: {
       ...cfg.channels,
-      'opclaw-zalo': {
-        ...cfg.channels?.['opclaw-zalo'],
+      'zaloclaw': {
+        ...cfg.channels?.['zaloclaw'],
         dmPolicy,
         ...(allowFrom ? { allowFrom } : {}),
       },
@@ -45,7 +45,7 @@ function setOpclawZaloDmPolicy(
   } as OpenClawConfig;
 }
 
-async function noteOpclawZaloHelp(prompter: WizardPrompter): Promise<void> {
+async function noteZaloClawHelp(prompter: WizardPrompter): Promise<void> {
   await prompter.note(
     [
       "OpenClaw Zalo Account login via QR code.",
@@ -60,13 +60,13 @@ async function noteOpclawZaloHelp(prompter: WizardPrompter): Promise<void> {
   );
 }
 
-async function promptOpclawZaloAllowFrom(params: {
+async function promptZaloClawAllowFrom(params: {
   cfg: OpenClawConfig;
   prompter: WizardPrompter;
   accountId: string;
 }): Promise<OpenClawConfig> {
   const { cfg, prompter, accountId } = params;
-  const resolved = resolveOpclawZaloAccountSync({ cfg, accountId });
+  const resolved = resolveZaloClawAccountSync({ cfg, accountId });
   const existingAllowFrom = resolved.config.allowFrom ?? [];
   const parseInput = (raw: string) =>
     raw.split(/[\n,;]+/g).map((entry) => entry.trim()).filter(Boolean);
@@ -91,7 +91,7 @@ async function promptOpclawZaloAllowFrom(params: {
 
   while (true) {
     const entry = await prompter.text({
-      message: "OpclawZalo allowFrom (username or user id)",
+      message: "ZaloClaw allowFrom (username or user id)",
       placeholder: "Alice, 123456789",
       initialValue: existingAllowFrom[0] ? String(existingAllowFrom[0]) : undefined,
       validate: (value) => (String(value ?? "").trim() ? undefined : "Required"),
@@ -116,8 +116,8 @@ async function promptOpclawZaloAllowFrom(params: {
         ...cfg,
         channels: {
           ...cfg.channels,
-          'opclaw-zalo': {
-            ...cfg.channels?.['opclaw-zalo'],
+          'zaloclaw': {
+            ...cfg.channels?.['zaloclaw'],
             enabled: true,
             dmPolicy: "allowlist",
             allowFrom: unique,
@@ -129,14 +129,14 @@ async function promptOpclawZaloAllowFrom(params: {
       ...cfg,
       channels: {
         ...cfg.channels,
-        'opclaw-zalo': {
-          ...cfg.channels?.['opclaw-zalo'],
+        'zaloclaw': {
+          ...cfg.channels?.['zaloclaw'],
           enabled: true,
           accounts: {
-            ...cfg.channels?.['opclaw-zalo']?.accounts,
+            ...cfg.channels?.['zaloclaw']?.accounts,
             [accountId]: {
-              ...cfg.channels?.['opclaw-zalo']?.accounts?.[accountId],
-              enabled: cfg.channels?.['opclaw-zalo']?.accounts?.[accountId]?.enabled ?? true,
+              ...cfg.channels?.['zaloclaw']?.accounts?.[accountId],
+              enabled: cfg.channels?.['zaloclaw']?.accounts?.[accountId]?.enabled ?? true,
               dmPolicy: "allowlist",
               allowFrom: unique,
             },
@@ -147,7 +147,7 @@ async function promptOpclawZaloAllowFrom(params: {
   }
 }
 
-function setOpclawZaloGroupPolicy(
+function setZaloClawGroupPolicy(
   cfg: OpenClawConfig,
   accountId: string,
   groupPolicy: "open" | "allowlist" | "disabled",
@@ -157,7 +157,7 @@ function setOpclawZaloGroupPolicy(
       ...cfg,
       channels: {
         ...cfg.channels,
-        'opclaw-zalo': { ...cfg.channels?.['opclaw-zalo'], enabled: true, groupPolicy },
+        'zaloclaw': { ...cfg.channels?.['zaloclaw'], enabled: true, groupPolicy },
       },
     } as OpenClawConfig;
   }
@@ -165,14 +165,14 @@ function setOpclawZaloGroupPolicy(
     ...cfg,
     channels: {
       ...cfg.channels,
-      'opclaw-zalo': {
-        ...cfg.channels?.['opclaw-zalo'],
+      'zaloclaw': {
+        ...cfg.channels?.['zaloclaw'],
         enabled: true,
         accounts: {
-          ...cfg.channels?.['opclaw-zalo']?.accounts,
+          ...cfg.channels?.['zaloclaw']?.accounts,
           [accountId]: {
-            ...cfg.channels?.['opclaw-zalo']?.accounts?.[accountId],
-            enabled: cfg.channels?.['opclaw-zalo']?.accounts?.[accountId]?.enabled ?? true,
+            ...cfg.channels?.['zaloclaw']?.accounts?.[accountId],
+            enabled: cfg.channels?.['zaloclaw']?.accounts?.[accountId]?.enabled ?? true,
             groupPolicy,
           },
         },
@@ -181,7 +181,7 @@ function setOpclawZaloGroupPolicy(
   } as OpenClawConfig;
 }
 
-function setOpclawZaloGroupAllowlist(
+function setZaloClawGroupAllowlist(
   cfg: OpenClawConfig,
   accountId: string,
   groupKeys: string[],
@@ -192,7 +192,7 @@ function setOpclawZaloGroupAllowlist(
       ...cfg,
       channels: {
         ...cfg.channels,
-        'opclaw-zalo': { ...cfg.channels?.['opclaw-zalo'], enabled: true, groups },
+        'zaloclaw': { ...cfg.channels?.['zaloclaw'], enabled: true, groups },
       },
     } as OpenClawConfig;
   }
@@ -200,14 +200,14 @@ function setOpclawZaloGroupAllowlist(
     ...cfg,
     channels: {
       ...cfg.channels,
-      'opclaw-zalo': {
-        ...cfg.channels?.['opclaw-zalo'],
+      'zaloclaw': {
+        ...cfg.channels?.['zaloclaw'],
         enabled: true,
         accounts: {
-          ...cfg.channels?.['opclaw-zalo']?.accounts,
+          ...cfg.channels?.['zaloclaw']?.accounts,
           [accountId]: {
-            ...cfg.channels?.['opclaw-zalo']?.accounts?.[accountId],
-            enabled: cfg.channels?.['opclaw-zalo']?.accounts?.[accountId]?.enabled ?? true,
+            ...cfg.channels?.['zaloclaw']?.accounts?.[accountId],
+            enabled: cfg.channels?.['zaloclaw']?.accounts?.[accountId]?.enabled ?? true,
             groups,
           },
         },
@@ -216,7 +216,7 @@ function setOpclawZaloGroupAllowlist(
   } as OpenClawConfig;
 }
 
-async function resolveOpclawZaloGroups(params: {
+async function resolveZaloClawGroups(params: {
   cfg: OpenClawConfig;
   accountId: string;
   entries: string[];
@@ -265,16 +265,16 @@ async function resolveOpclawZaloGroups(params: {
 const dmPolicy: ChannelSetupDmPolicy = {
   label: "Zalo JS",
   channel,
-  policyKey: "channels['opclaw-zalo'].dmPolicy",
-  allowFromKey: "channels['opclaw-zalo'].allowFrom",
-  getCurrent: (cfg, _accountId?) => (cfg.channels?.['opclaw-zalo']?.dmPolicy ?? "open") as "open",
-  setPolicy: (cfg, policy, _accountId?) => setOpclawZaloDmPolicy(cfg, policy),
+  policyKey: "channels['zaloclaw'].dmPolicy",
+  allowFromKey: "channels['zaloclaw'].allowFrom",
+  getCurrent: (cfg, _accountId?) => (cfg.channels?.['zaloclaw']?.dmPolicy ?? "open") as "open",
+  setPolicy: (cfg, policy, _accountId?) => setZaloClawDmPolicy(cfg, policy),
   promptAllowFrom: async ({ cfg, prompter, accountId }) => {
     const id =
       accountId && normalizeAccountId(accountId)
         ? (normalizeAccountId(accountId) ?? DEFAULT_ACCOUNT_ID)
-        : resolveDefaultOpclawZaloAccountId(cfg);
-    return promptOpclawZaloAllowFrom({ cfg, prompter, accountId: id });
+        : resolveDefaultZaloClawAccountId(cfg);
+    return promptZaloClawAllowFrom({ cfg, prompter, accountId: id });
   },
 };
 
@@ -312,7 +312,7 @@ async function performQrLogin(prompter: WizardPrompter): Promise<void> {
   }
 }
 
-export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
+export const zaloClawOnboardingAdapter: ChannelSetupWizardAdapter = {
   channel,
   dmPolicy,
   getStatus: async ({ cfg }) => {
@@ -332,17 +332,17 @@ export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
     shouldPromptAccountIds,
     forceAllowFrom,
   }) => {
-    const opclawZaloOverride = accountOverrides['opclaw-zalo']?.trim();
-    const defaultAccountId = resolveDefaultOpclawZaloAccountId(cfg);
-    let accountId = opclawZaloOverride ? normalizeAccountId(opclawZaloOverride) : defaultAccountId;
+    const zaloClawOverride = accountOverrides['zaloclaw']?.trim();
+    const defaultAccountId = resolveDefaultZaloClawAccountId(cfg);
+    let accountId = zaloClawOverride ? normalizeAccountId(zaloClawOverride) : defaultAccountId;
 
-    if (shouldPromptAccountIds && !opclawZaloOverride) {
+    if (shouldPromptAccountIds && !zaloClawOverride) {
       accountId = await promptAccountId({
         cfg,
         prompter,
         label: "Zalo JS",
         currentId: accountId,
-        listAccountIds: listOpclawZaloAccountIds,
+        listAccountIds: listZaloClawAccountIds,
         defaultAccountId,
       });
     }
@@ -351,7 +351,7 @@ export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
     const alreadyAuthenticated = hasStoredCredentials();
 
     if (!alreadyAuthenticated) {
-      await noteOpclawZaloHelp(prompter);
+      await noteZaloClawHelp(prompter);
       const wantsLogin = await prompter.confirm({
         message: "Login via QR code now?",
         initialValue: true,
@@ -385,13 +385,13 @@ export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
         ...next,
         channels: {
           ...next.channels,
-          'opclaw-zalo': {
-            ...next.channels?.['opclaw-zalo'],
+          'zaloclaw': {
+            ...next.channels?.['zaloclaw'],
             enabled: true,
             accounts: {
-              ...next.channels?.['opclaw-zalo']?.accounts,
+              ...next.channels?.['zaloclaw']?.accounts,
               [DEFAULT_ACCOUNT_ID]: {
-                ...next.channels?.['opclaw-zalo']?.accounts?.[DEFAULT_ACCOUNT_ID],
+                ...next.channels?.['zaloclaw']?.accounts?.[DEFAULT_ACCOUNT_ID],
                 enabled: true,
               },
             },
@@ -403,13 +403,13 @@ export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
         ...next,
         channels: {
           ...next.channels,
-          'opclaw-zalo': {
-            ...next.channels?.['opclaw-zalo'],
+          'zaloclaw': {
+            ...next.channels?.['zaloclaw'],
             enabled: true,
             accounts: {
-              ...next.channels?.['opclaw-zalo']?.accounts,
+              ...next.channels?.['zaloclaw']?.accounts,
               [accountId]: {
-                ...next.channels?.['opclaw-zalo']?.accounts?.[accountId],
+                ...next.channels?.['zaloclaw']?.accounts?.[accountId],
                 enabled: true,
               },
             },
@@ -419,10 +419,10 @@ export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
     }
 
     if (forceAllowFrom) {
-      next = await promptOpclawZaloAllowFrom({ cfg: next, prompter, accountId });
+      next = await promptZaloClawAllowFrom({ cfg: next, prompter, accountId });
     }
 
-    const account = resolveOpclawZaloAccountSync({ cfg: next, accountId });
+    const account = resolveZaloClawAccountSync({ cfg: next, accountId });
     const accessConfig = await promptChannelAccessConfig({
       prompter,
       label: "Zalo groups",
@@ -433,12 +433,12 @@ export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
     });
     if (accessConfig) {
       if (accessConfig.policy !== "allowlist") {
-        next = setOpclawZaloGroupPolicy(next, accountId, accessConfig.policy);
+        next = setZaloClawGroupPolicy(next, accountId, accessConfig.policy);
       } else {
         let keys = accessConfig.entries;
         if (accessConfig.entries.length > 0) {
           try {
-            const resolved = await resolveOpclawZaloGroups({ cfg: next, accountId, entries: accessConfig.entries });
+            const resolved = await resolveZaloClawGroups({ cfg: next, accountId, entries: accessConfig.entries });
             const resolvedIds = resolved.filter((e) => e.resolved && e.id).map((e) => e.id as string);
             const unresolved = resolved.filter((e) => !e.resolved).map((e) => e.input);
             keys = [...resolvedIds, ...unresolved.map((e) => e.trim()).filter(Boolean)];
@@ -455,8 +455,8 @@ export const opclawZaloOnboardingAdapter: ChannelSetupWizardAdapter = {
             await prompter.note(`Group lookup failed; keeping entries as typed. ${String(err)}`, "Zalo groups");
           }
         }
-        next = setOpclawZaloGroupPolicy(next, accountId, "allowlist");
-        next = setOpclawZaloGroupAllowlist(next, accountId, keys);
+        next = setZaloClawGroupPolicy(next, accountId, "allowlist");
+        next = setZaloClawGroupAllowlist(next, accountId, keys);
       }
     }
 
