@@ -19,7 +19,7 @@ const plugin = {
       name: "zaloclaw",
       label: "ZaloClaw",
       description:
-        "Complete Zalo personal account management via zca-js (130 actions). " +
+        "Complete Zalo personal account management via zca-js (147 actions). " +
         "Messaging: send, image, link, send-to-stranger, send-video, send-voice, send-sticker, send-card, send-bank-card, " +
         "delete-message, undo-message (recall), forward-message, add-reaction, send-typing. " +
         "Friend: find-user, send-friend-request, accept/reject-friend-request, get-sent/friend-requests, " +

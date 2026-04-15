@@ -78,10 +78,10 @@ export async function undoLastOutbound(api: API, threadId: string): Promise<bool
   }
 
   try {
-    await api.undo({
+    await (api as any).undo({
       msgId: last.msgId,
       cliMsgId: last.cliMsgId ?? last.msgId,
-    }, threadId);
+    });
     // Remove from tracking after undo
     const list = outboundMessages.get(threadId);
     if (list) list.pop();

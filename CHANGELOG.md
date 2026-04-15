@@ -4,6 +4,37 @@ Tất cả thay đổi đáng chú ý của dự án được ghi lại trong fi
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.3] — 2026-04-15
+
+### Sửa lỗi — API contract audit (18 bugs)
+
+#### 🔴 Critical
+- **`api.undo()`**: sửa gọi sai 2–3 params → đúng 1 param (`tool.ts`, `auto-unsend.ts`)
+- **`addGroupBlockedMember` / `removeGroupBlockedMember`**: sửa thứ tự params ngược `(gid, uid)` → `(uid, gid)` (`tool.ts`)
+
+#### 🔴 High
+- **`updateProfile`**: thêm wrapper `{ profile: {...} }` bắt buộc + fetch profile hiện tại trước khi partial update (`tool.ts`)
+- **`last-online`**: đổi từ `getUserInfo()` (luôn trả undefined) sang `api.lastOnline(uid)` đúng API (`tool.ts`)
+- **`createProductCatalog`**: sửa 3 field names sai: `name`→`productName`, `desc`→`description`, `imageUrl`→`product_photos` (`tool.ts`)
+- **`updateProductCatalog`**: sửa field names + thêm `catalogId`, `createTime` required fields (`tool.ts`)
+- **`changeAccountAvatar`**: download URL → temp file trước khi gọi API (chỉ nhận local path/Buffer) (`tool.ts`)
+- **`changeGroupAvatar`**: download URL → Buffer object trước khi gọi API (`tool.ts`)
+
+#### 🟡 High
+- **`forward-message`**: bỏ `msgId` field không tồn tại trong `ForwardMessagePayload`, document limitation (`tool.ts`)
+- **DM `senderId` fallback**: thêm guard `rawSenderId.trim()` + warn log khi fallback xảy ra — chặn denyFrom bypass (`monitor.ts`)
+
+#### 🟡 Medium
+- **`undo-friend-request`**: bỏ fallback `removeFriend` nguy hiểm, chỉ dùng `undoFriendRequest` official API (`tool.ts`)
+- **`getPollDetail`**: cast `pollId` sang string đúng docs: `String(p.pollId)` (`tool.ts`)
+- **`getCurrentUid()` null safety**: fallback sang `api.getOwnId()` sync tại mention detection + listener startup (`monitor.ts`)
+- **`getBizAccount`**: bỏ param `uid` (API không nhận params) (`tool.ts`)
+
+#### 🟢 Low
+- **`join-group-link`**: wrap `getGroupLinkInfo` trong try/catch riêng, không block `joinGroupLink` nếu throw (`tool.ts`)
+- **`delete-chat`**: thêm comment document limitation empty `cliMsgId`/`globalMsgId` (`tool.ts`)
+- **Tool description**: cập nhật "130 actions" → "147 actions" trong `index.ts`
+
 ## [2.0.2] — 2026-04-15
 
 ### Sửa lỗi

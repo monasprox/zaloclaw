@@ -651,8 +651,11 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "forward-message": {
       if (!p.msgId || !p.threadIds?.length) throw new Error("msgId and threadIds required");
       const a = await api();
-      // [H5] Include msgId in the forward payload for correct message forwarding
-      const payload: any = { msgId: p.msgId, message: p.message || "" };
+      // Note: ForwardMessagePayload does not have a msgId field.
+      // Forward sends the message text to target threads. True message forwarding
+      // requires reference metadata (ts, logSrcType, fwLvl) which msg-id-store
+      // does not currently track.
+      const payload: any = { message: p.message || "" };
       if (p.messageTtl !== undefined) payload.ttl = p.messageTtl;
       const res = await a.forwardMessage(payload, p.threadIds);
       return ok({ success: true, forwarded: res?.success, failed: res?.fail });
@@ -684,10 +687,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       }
       if (!undoCliMsgId) throw new Error("cliMsgId not found — message may be too old");
       const a = await api();
-      const stored = lookupCliMsgId(p.msgId);
-      const undoThreadId = p.threadId ?? stored?.threadId ?? "";
-      const undoType = stored?.isGroup ? ThreadType.Group : ThreadType.User;
-      const res = await a.undo({ msgId: p.msgId, cliMsgId: undoCliMsgId }, undoThreadId, undoType);
+      const res = await (a as any).undo({ msgId: p.msgId, cliMsgId: undoCliMsgId });
       return ok({ success: true, result: res });
     }
 
@@ -819,13 +819,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.userId) throw new Error("userId required");
       const a = await api();
       const uid = await resolveUserId(p.userId);
-      // [M6] Use undoFriendRequest if available, fall back to removeFriend
-      if (typeof a.undoFriendRequest === "function") {
-        await a.undoFriendRequest(uid);
-      } else {
-        // Fallback for older zca-js versions — removeFriend before acceptance cancels the request
-        await a.removeFriend(uid);
-      }
+      await a.undoFriendRequest(uid);
       return ok({ success: true, userId: uid });
     }
 
@@ -1095,7 +1089,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const gid = await resolveGroupId(p.groupId);
       const uid = await resolveUserId(p.userId);
       const a = await api();
-      const res = await a.addGroupBlockedMember(gid, uid);
+      const res = await a.addGroupBlockedMember(uid, gid);
       return ok({ success: true, result: res });
     }
 
@@ -1104,7 +1098,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const gid = await resolveGroupId(p.groupId);
       const uid = await resolveUserId(p.userId);
       const a = await api();
-      const res = await a.removeGroupBlockedMember(gid, uid);
+      const res = await a.removeGroupBlockedMember(uid, gid);
       return ok({ success: true, result: res });
     }
 
@@ -1119,7 +1113,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "join-group-link": {
       if (!p.link) throw new Error("link required");
       const a = await api();
-      const info = await a.getGroupLinkInfo(p.link);
+      let info = null;
+      try { info = await a.getGroupLinkInfo(p.link); } catch {}
       const res = await a.joinGroupLink(p.link);
       return ok({ success: true, groupInfo: info, result: res });
     }
@@ -1156,7 +1151,12 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.groupId || !p.url) throw new Error("groupId and url required");
       const gid = await resolveGroupId(p.groupId);
       const a = await api();
-      await a.changeGroupAvatar(p.url, gid);
+      if (/^https?:\/\//i.test(p.url)) {
+        const { buffer } = await safeFetch(p.url, { maxSizeBytes: 5 * 1024 * 1024 });
+        await a.changeGroupAvatar({ data: buffer, filename: "avatar.jpg", metadata: { totalSize: buffer.length, width: 400, height: 400 } } as any, gid);
+      } else {
+        await a.changeGroupAvatar(p.url, gid);
+      }
       return ok({ success: true, groupId: gid });
     }
 
@@ -1208,7 +1208,7 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "get-poll-detail": {
       if (!p.pollId || !p.threadId) throw new Error("pollId and threadId required");
       const a = await api();
-      const res = await a.getPollDetail(p.pollId);
+      const res = await a.getPollDetail(String(p.pollId) as any);
       return ok({ poll: res });
     }
 
@@ -1308,6 +1308,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId) throw new Error("threadId required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
+      // Note: cliMsgId/globalMsgId are empty — API may delete partially or fail silently.
+      // Ideally fetch last message of thread first, but no API exists for that currently.
       const res = await a.deleteChat({ ownerId: getCurrentUid() ?? "", cliMsgId: "", globalMsgId: "" }, p.threadId, type);
       return ok({ success: true, result: res });
     }
@@ -1536,9 +1538,12 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.userId) throw new Error("userId required");
       const uid = await resolveUserId(p.userId);
       const a = await api();
-      const info = await a.getUserInfo(uid);
-      const profile = (info as any)?.changed_profiles?.[uid];
-      return ok({ userId: uid, lastOnline: profile?.lastOnline ?? profile?.lastActionTime });
+      const res = await a.lastOnline(uid);
+      return ok({
+        userId: uid,
+        lastOnline: (res as any)?.lastOnline,
+        showOnlineStatus: (res as any)?.settings?.show_online_status,
+      });
     }
 
     case "get-qr": {
@@ -1551,11 +1556,16 @@ async function dispatch(p: Params): Promise<ToolResult> {
 
     case "update-profile": {
       const a = await api();
-      const opts: any = {};
-      if (p.name) opts.name = p.name;
-      if (p.dob) opts.dob = p.dob;
-      if (p.gender !== undefined) opts.gender = p.gender;
-      const res = await a.updateProfile(opts);
+      // Fetch current profile to fill required fields for partial update
+      const meInfo = await a.fetchAccountInfo();
+      const currentProfile = (meInfo as any)?.profile ?? meInfo;
+      const res = await a.updateProfile({
+        profile: {
+          name: p.name ?? currentProfile?.displayName ?? "",
+          dob: p.dob ?? currentProfile?.dob ?? "2000-01-01",
+          gender: p.gender ?? currentProfile?.gender ?? 0,
+        },
+      });
       return ok({ success: true, result: res });
     }
 
@@ -1569,7 +1579,19 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "change-avatar": {
       if (!p.url) throw new Error("url required");
       const a = await api();
-      const res = await a.changeAccountAvatar(p.url);
+      let avatarSource: string = p.url;
+      if (/^https?:\/\//i.test(p.url)) {
+        const tmpPath = nodePath.join(nodeOs.tmpdir(), `zalo-avatar-${Date.now()}-${nodeCrypto.randomBytes(4).toString("hex")}.jpg`);
+        const { buffer } = await safeFetch(p.url, { maxSizeBytes: 5 * 1024 * 1024 });
+        nodeFs.writeFileSync(tmpPath, buffer, { mode: 0o600 });
+        try {
+          const res = await a.changeAccountAvatar(tmpPath);
+          return ok({ success: true, result: res });
+        } finally {
+          try { nodeFs.unlinkSync(tmpPath); } catch {}
+        }
+      }
+      const res = await a.changeAccountAvatar(avatarSource);
       return ok({ success: true, result: res });
     }
 
@@ -1594,10 +1616,8 @@ async function dispatch(p: Params): Promise<ToolResult> {
     }
 
     case "get-biz-account": {
-      if (!p.userId) throw new Error("userId required");
-      const uid = await resolveUserId(p.userId);
       const a = await api();
-      const res = await a.getBizAccount(uid);
+      const res = await (a as any).getBizAccount();
       return ok({ bizAccount: res });
     }
 
@@ -1702,11 +1722,13 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "create-product": {
       if (!p.name) throw new Error("name required");
       const a = await api();
-      const opts: any = { name: p.name };
-      if (p.price) opts.price = p.price;
-      if (p.description) opts.desc = p.description;
-      if (p.catalogId) opts.catalogId = p.catalogId;
-      if (p.url) opts.imageUrl = p.url;
+      const opts: any = {
+        catalogId: p.catalogId ?? "",
+        productName: p.name,
+        price: p.price ?? "0",
+        description: p.description ?? "",
+      };
+      if (p.url) opts.product_photos = [p.url];
       const res = await a.createProductCatalog(opts);
       return ok({ success: true, result: res });
     }
@@ -1714,10 +1736,14 @@ async function dispatch(p: Params): Promise<ToolResult> {
     case "update-product": {
       if (!p.productId) throw new Error("productId required");
       const a = await api();
-      const opts: any = { productId: p.productId };
-      if (p.name) opts.name = p.name;
-      if (p.price) opts.price = p.price;
-      if (p.description) opts.desc = p.description;
+      const opts: any = {
+        productId: p.productId,
+        catalogId: p.catalogId ?? "",
+        productName: p.name ?? "",
+        price: p.price ?? "0",
+        description: p.description ?? "",
+        createTime: Date.now(),
+      };
       const res = await a.updateProductCatalog(opts);
       return ok({ success: true, result: res });
     }

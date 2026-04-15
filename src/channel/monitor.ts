@@ -357,7 +357,10 @@ function convertToZaloClawMessage(msg: Message): ZaloClawMessage | null {
   const isGroup = msg.type === ThreadType.Group;
   const threadId = msg.threadId;
   const rawSenderId = data.uidFrom;
-  const senderId = !isGroup && !/^\d+$/.test(rawSenderId) ? threadId : rawSenderId;
+  // Guard: if uidFrom is empty/non-numeric in DM, fall back to threadId with warning
+  const senderId = (!isGroup && (!rawSenderId?.trim() || !/^\d+$/.test(rawSenderId.trim())))
+    ? (console.warn(`[monitor] DM uidFrom empty/non-numeric ("${rawSenderId}"), falling back to threadId ${threadId}`), threadId)
+    : rawSenderId;
   const senderName = data.dName ?? "";
   const timestamp = data.ts ? parseInt(data.ts, 10) : Math.floor(Date.now() / 1000);
 
@@ -533,7 +536,7 @@ async function processMessage(
   }
 
   // Mention gating for groups
-  const selfUid = getCurrentUid();
+  const selfUid = getCurrentUid() ?? (await getApi()).getOwnId();
   const wasMentioned = isGroup && selfUid
     ? (message.mentions ?? []).some(m => m.uid === selfUid)
     : false;
@@ -1162,7 +1165,7 @@ export async function monitorZaloClawProvider(
     logVerbose(core, runtime, `[${account.accountId}] starting zca-js listener`);
     try {
       const api = await getApi();
-      const selfUid = getCurrentUid();
+      const selfUid = getCurrentUid() ?? api.getOwnId();
       if (listenersRegistered) {
         try { api.listener.stop(); } catch {}
         api.listener.start({ retryOnClose: true });
