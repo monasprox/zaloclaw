@@ -5,95 +5,95 @@
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-%E2%89%A52026.2.0-orange)](https://github.com/nicholasxuu/openclaw)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-green)](https://nodejs.org/)
 
-**OpenClaw channel plugin** that connects your Zalo personal account as a fully-featured messaging channel — powered by [zca-js](https://github.com/nicholasxuu/zca-js).
+**Plugin kênh OpenClaw** kết nối tài khoản Zalo cá nhân của bạn thành một kênh nhắn tin đầy đủ tính năng — sử dụng [zca-js](https://github.com/nicholasxuu/zca-js).
 
-> **🤖 For AI Agents:** See [**docs/agent-help.md**](docs/agent-help.md) — complete tool usage guide for all 147 actions with parameters, examples, update process, and persistence instructions. Quick reference: [**TOOLS.md**](TOOLS.md). Installation: [**docs/agent-install.md**](docs/agent-install.md).
-
----
-
-🚀 Join the Zalo Community. Get the plugin, updates, and real-world automation use cases. https://zalo.me/g/gigr4cnahvidpewxk74z
-
-## Why
-
-Zalo is Vietnam's dominant messaging platform (~75M users) but has no official bot API for personal accounts. This plugin bridges that gap by connecting a Zalo personal account to OpenClaw's agent framework — enabling AI-powered conversations, tool execution, and automation directly through Zalo chat.
-
-## Features
-
-### Core
-- **147 Zalo API actions** exposed as agent tools — messaging, friends, groups, polls, reminders, profile, catalogs, notes, settings, and more
-- **QR code login** — authenticate via terminal or control panel, credentials auto-persist
-- **DM & Group support** — per-account policies: `open`, `pairing`, `allowlist`, `disabled`
-- **Mention gating** — in groups, bot only responds when @mentioned (configurable per group)
-- **Image processing** — downloads and analyzes images sent with @mention; buffers images from non-mention messages so they're available as context when the bot is mentioned later
-
-### Message Features
-- **Rich text** — send styled messages with bold, italic, underline, strikethrough, colors (markdown auto-converted)
-- **Urgency** — mark messages as important (`urgency: 1`) or urgent (`urgency: 2`)
-- **Reply/quote context** — when a user replies to a message, the AI receives the quoted message content and sender
-- **File sending** — send any file type (PDF, docs, etc.) via local path or URL
-- **Reaction acknowledgment** — react to incoming messages (configurable: heart, like, haha, etc.)
-- **Quote reply** — reply to specific messages with context threading
-- **Read receipts** — mark messages as read
-- **Sticker support** — search and send native Zalo stickers via agent tool calls
-- **Auto-unsend** — recall sent messages
-- **Typing indicator** — show typing status while processing
-
-### Access Control
-- **Per-user allow/deny lists** — global and per-group
-- **Pairing mode** — code-based DM authorization for unknown users
-- **Group policies** — open, allowlist, or disabled per group
-- **Command authorization** — restrict control commands to allowed users
+> **🤖 Dành cho AI Agent:** Xem [**docs/agent-help.md**](docs/agent-help.md) — hướng dẫn đầy đủ sử dụng 147 actions với tham số, ví dụ, quy trình cập nhật và hướng dẫn lưu trữ. Tham khảo nhanh: [**TOOLS.md**](TOOLS.md). Cài đặt: [**docs/agent-install.md**](docs/agent-install.md).
 
 ---
 
-## Quick Start
+🚀 Tham gia cộng đồng Zalo. Nhận plugin, cập nhật, và các use case tự động hóa thực tế. https://zalo.me/g/gigr4cnahvidpewxk74z
 
-### Prerequisites
+## Tại sao cần zaloclaw?
+
+Zalo là nền tảng nhắn tin phổ biến nhất Việt Nam (~75 triệu người dùng) nhưng không có API bot chính thức cho tài khoản cá nhân. Plugin này giải quyết vấn đề đó bằng cách kết nối tài khoản Zalo cá nhân với framework agent của OpenClaw — cho phép hội thoại AI, thực thi công cụ và tự động hóa trực tiếp qua Zalo chat.
+
+## Tính năng
+
+### Cốt lõi
+- **147 Zalo API actions** được mở ra dưới dạng công cụ agent — nhắn tin, bạn bè, nhóm, bình chọn, nhắc nhở, hồ sơ, danh mục sản phẩm, ghi chú, cài đặt, v.v.
+- **Đăng nhập QR code** — xác thực qua terminal hoặc bảng điều khiển, thông tin đăng nhập tự động lưu
+- **Hỗ trợ DM & Nhóm** — chính sách theo tài khoản: `open`, `pairing`, `allowlist`, `disabled`
+- **Mention gating** — trong nhóm, bot chỉ phản hồi khi được @mention (cấu hình theo nhóm)
+- **Xử lý hình ảnh** — tải và phân tích ảnh gửi kèm @mention; đệm ảnh từ tin nhắn không mention để sẵn sàng làm ngữ cảnh khi bot được mention sau
+
+### Tính năng tin nhắn
+- **Rich text** — gửi tin nhắn có định dạng: đậm, nghiêng, gạch chân, gạch ngang, màu sắc (markdown tự động chuyển đổi)
+- **Mức độ khẩn cấp** — đánh dấu tin nhắn quan trọng (`urgency: 1`) hoặc khẩn cấp (`urgency: 2`)
+- **Ngữ cảnh trả lời/trích dẫn** — khi người dùng trả lời tin nhắn, AI nhận được nội dung và người gửi tin nhắn được trích dẫn
+- **Gửi file** — gửi mọi loại file (PDF, doc, v.v.) qua đường dẫn local hoặc URL
+- **Xác nhận bằng reaction** — react vào tin nhắn đến (cấu hình: heart, like, haha, v.v.)
+- **Trả lời trích dẫn** — trả lời tin nhắn cụ thể với context threading
+- **Xác nhận đã đọc** — đánh dấu tin nhắn đã đọc
+- **Hỗ trợ sticker** — tìm kiếm và gửi sticker Zalo gốc qua agent tool calls
+- **Tự động thu hồi** — thu hồi tin nhắn đã gửi
+- **Chỉ báo đang nhập** — hiển thị trạng thái đang nhập khi xử lý
+
+### Kiểm soát truy cập
+- **Danh sách cho phép/chặn theo người dùng** — toàn cục và theo nhóm
+- **Chế độ ghép nối** — xác thực DM bằng mã cho người dùng chưa biết
+- **Chính sách nhóm** — open, allowlist, hoặc disabled theo nhóm
+- **Phân quyền lệnh** — giới hạn lệnh điều khiển cho người dùng được phép
+
+---
+
+## Bắt đầu nhanh
+
+### Yêu cầu
 
 - [OpenClaw](https://github.com/nicholasxuu/openclaw) ≥ 2026.2.0
 - Node.js ≥ 22
-- A Zalo personal account
+- Tài khoản Zalo cá nhân
 
-### Install
+### Cài đặt
 
 ```bash
-# Clone the plugin
+# Clone plugin
 git clone https://github.com/monasprox/zaloclaw.git /path/to/zaloclaw
 
-# Install dependencies
+# Cài đặt dependencies
 cd /path/to/zaloclaw && npm install
 
-# Register with OpenClaw
+# Đăng ký với OpenClaw
 openclaw plugins install --link /path/to/zaloclaw
 
-# Restart gateway
+# Khởi động lại gateway
 openclaw gateway restart
 ```
 
-### Login
+### Đăng nhập
 
 ```bash
-# Show QR code in terminal — scan with Zalo app
+# Hiển thị QR code trên terminal — quét bằng ứng dụng Zalo
 openclaw channels login --channel zaloclaw
 ```
 
-After scanning, credentials are saved. Subsequent gateway restarts auto-login.
+Sau khi quét, thông tin đăng nhập được lưu tự động. Các lần khởi động gateway sau sẽ tự động đăng nhập.
 
-### Verify
+### Xác minh
 
 ```bash
 openclaw status
 ```
 
-You should see `zaloclaw` listed under channels with status `ON`.
+Bạn sẽ thấy `zaloclaw` trong danh sách channels với trạng thái `ON`.
 
 ---
 
-## Configuration
+## Cấu hình
 
-All configuration lives in `~/.openclaw/openclaw.json` under `channels.zaloclaw`.
+Toàn bộ cấu hình nằm trong `~/.openclaw/openclaw.json` tại `channels.zaloclaw`.
 
-### Minimal Config
+### Cấu hình tối thiểu
 
 ```jsonc
 {
@@ -109,7 +109,7 @@ All configuration lives in `~/.openclaw/openclaw.json` under `channels.zaloclaw`
 }
 ```
 
-### Full Config Example
+### Ví dụ cấu hình đầy đủ
 
 ```jsonc
 {
@@ -119,28 +119,28 @@ All configuration lives in `~/.openclaw/openclaw.json` under `channels.zaloclaw`
         "default": {
           "enabled": true,
 
-          // DM access policy
+          // Chính sách truy cập DM
           "dmPolicy": "open",           // open | pairing | allowlist | disabled
-          "allowFrom": ["*"],           // Zalo user IDs or "*" for all
-          "denyFrom": [],               // Block specific users
+          "allowFrom": ["*"],           // Zalo user IDs hoặc "*" cho tất cả
+          "denyFrom": [],               // Chặn người dùng cụ thể
 
-          // Group access policy
+          // Chính sách truy cập nhóm
           "groupPolicy": "open",        // open | allowlist | disabled
 
-          // Per-group overrides (key = group ID, name, or "*" for default)
+          // Ghi đè theo nhóm (key = group ID, tên nhóm, hoặc "*" cho mặc định)
           "groups": {
             "*": {
-              "requireMention": true    // Default: only respond when @mentioned
+              "requireMention": true    // Mặc định: chỉ phản hồi khi được @mention
             },
             "123456789": {
               "allow": true,
-              "requireMention": false,  // Always respond in this group
-              "allowUsers": [],         // Empty = all users allowed
+              "requireMention": false,  // Luôn phản hồi trong nhóm này
+              "allowUsers": [],         // Rỗng = cho phép tất cả
               "denyUsers": []
             }
           },
 
-          // Display
+          // Hiển thị
           "markdown": {
             "tables": "bullets"         // off | bullets | code | block
           },
@@ -153,286 +153,286 @@ All configuration lives in `~/.openclaw/openclaw.json` under `channels.zaloclaw`
 }
 ```
 
-### Configuration Reference
+### Tham chiếu cấu hình
 
-#### Account Settings
+#### Cài đặt tài khoản
 
-| Setting | Type | Default | Description |
+| Cài đặt | Kiểu | Mặc định | Mô tả |
 |---------|------|---------|-------------|
-| `enabled` | `boolean` | `true` | Enable/disable this account |
-| `dmPolicy` | `string` | `"open"` | DM access: `open` / `pairing` / `allowlist` / `disabled` |
-| `allowFrom` | `string[]` | `["*"]` | Users allowed to DM (IDs or `*`) |
-| `denyFrom` | `string[]` | `[]` | Users blocked from all interaction |
-| `groupPolicy` | `string` | `"open"` | Group access: `open` / `allowlist` / `disabled` |
-| `messagePrefix` | `string` | `""` | Text prepended to every outbound message |
-| `responsePrefix` | `string` | `""` | Text prepended to agent responses |
+| `enabled` | `boolean` | `true` | Bật/tắt tài khoản này |
+| `dmPolicy` | `string` | `"open"` | Truy cập DM: `open` / `pairing` / `allowlist` / `disabled` |
+| `allowFrom` | `string[]` | `["*"]` | Người dùng được phép DM (IDs hoặc `*`) |
+| `denyFrom` | `string[]` | `[]` | Người dùng bị chặn mọi tương tác |
+| `groupPolicy` | `string` | `"open"` | Truy cập nhóm: `open` / `allowlist` / `disabled` |
+| `messagePrefix` | `string` | `""` | Văn bản thêm vào đầu mỗi tin nhắn gửi đi |
+| `responsePrefix` | `string` | `""` | Văn bản thêm vào đầu phản hồi agent |
 
-#### Per-Group Settings (`groups.<id>`)
+#### Cài đặt theo nhóm (`groups.<id>`)
 
-| Setting | Type | Default | Description |
+| Cài đặt | Kiểu | Mặc định | Mô tả |
 |---------|------|---------|-------------|
-| `allow` | `boolean` | — | Explicitly allow/deny this group |
-| `requireMention` | `boolean` | `false` | Only respond when @mentioned |
-| `allowUsers` | `string[]` | `[]` | Only these users trigger the bot |
-| `denyUsers` | `string[]` | `[]` | Block specific users in this group |
-| `tools` | `object` | — | Per-group tool execution policy |
+| `allow` | `boolean` | — | Cho phép/chặn nhóm này rõ ràng |
+| `requireMention` | `boolean` | `false` | Chỉ phản hồi khi được @mention |
+| `allowUsers` | `string[]` | `[]` | Chỉ những người dùng này kích hoạt bot |
+| `denyUsers` | `string[]` | `[]` | Chặn người dùng cụ thể trong nhóm này |
+| `tools` | `object` | — | Chính sách thực thi tool theo nhóm |
 
-#### DM Policies
+#### Chính sách DM
 
-| Policy | Behavior |
+| Chính sách | Hành vi |
 |--------|----------|
-| `open` | Accept all DMs |
-| `pairing` | Require code exchange for unknown users |
-| `allowlist` | Only `allowFrom` users can DM |
-| `disabled` | Block all DMs |
+| `open` | Chấp nhận tất cả DM |
+| `pairing` | Yêu cầu trao đổi mã cho người dùng chưa biết |
+| `allowlist` | Chỉ người dùng trong `allowFrom` được DM |
+| `disabled` | Chặn tất cả DM |
 
 ---
 
-## Agent Tools
+## Công cụ Agent
 
-The plugin exposes **147 actions** as a single `zaloclaw` agent tool. The agent selects the action by name. Names and group names are auto-resolved to Zalo numeric IDs.
+Plugin cung cấp **147 actions** dưới dạng một tool `zaloclaw` duy nhất. Agent chọn action bằng tên. Tên người dùng và tên nhóm tự động được chuyển đổi thành Zalo numeric IDs.
 
-### Messaging (16 actions)
+### Nhắn tin (16 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `send` | Send text message (supports `urgency` and `messageTtl`) |
-| `send-styled` | Send message with rich text (bold, italic, underline, strike, colors) |
-| `send-link` | Send a URL with preview |
-| `send-image` | Send image by URL |
-| `send-file` | Send any file (PDF, doc, etc.) by local path or URL |
-| `send-video` | Send video by URL |
-| `send-voice` | Send voice message by URL |
-| `send-sticker` | Send sticker by ID or keyword search |
-| `send-card` | Send contact card |
-| `send-bank-card` | Send bank card info |
-| `send-typing` | Send typing indicator |
-| `send-to-stranger` | Send message to non-friend |
-| `forward-message` | Forward message to multiple threads (supports TTL) |
-| `delete-message` | Delete a message |
-| `undo-message` | Recall a sent message |
-| `add-reaction` | React to a message (heart, like, haha, wow, cry, angry) |
+| `send` | Gửi tin nhắn văn bản (hỗ trợ `urgency` và `messageTtl`) |
+| `send-styled` | Gửi tin nhắn rich text (đậm, nghiêng, gạch chân, gạch ngang, màu sắc) |
+| `send-link` | Gửi URL kèm preview |
+| `send-image` | Gửi ảnh theo URL |
+| `send-file` | Gửi file bất kỳ (PDF, doc, v.v.) qua đường dẫn local hoặc URL |
+| `send-video` | Gửi video theo URL |
+| `send-voice` | Gửi tin nhắn thoại theo URL |
+| `send-sticker` | Gửi sticker theo ID hoặc tìm kiếm từ khóa |
+| `send-card` | Gửi danh thiếp liên hệ |
+| `send-bank-card` | Gửi thông tin thẻ ngân hàng |
+| `send-typing` | Gửi chỉ báo đang nhập |
+| `send-to-stranger` | Gửi tin nhắn cho người lạ |
+| `forward-message` | Chuyển tiếp tin nhắn đến nhiều cuộc hội thoại (hỗ trợ TTL) |
+| `delete-message` | Xóa tin nhắn |
+| `undo-message` | Thu hồi tin nhắn đã gửi |
+| `add-reaction` | React tin nhắn (heart, like, haha, wow, cry, angry) |
 
-### Friends (16 actions)
+### Bạn bè (16 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `friends` | List all friends (with search/filter) |
-| `find-user` | Find user by phone number (returns full profile) |
-| `find-user-by-username` | Find user by Zalo username |
-| `send-friend-request` | Send friend request (supports name resolution) |
-| `get-friend-requests` | List pending friend requests |
-| `accept-friend-request` | Accept a friend request |
-| `reject-friend-request` | Reject a friend request |
-| `get-sent-requests` | List sent friend requests |
-| `undo-friend-request` | Cancel a sent friend request |
-| `unfriend` | Remove a friend |
-| `check-friend-status` | Check friend/request status |
-| `set-friend-nickname` | Set nickname for a friend |
-| `remove-friend-nickname` | Remove friend nickname |
-| `get-online-friends` | List online friends |
-| `get-close-friends` | List close friends |
-| `get-friend-recommendations` | Get friend recommendations |
+| `friends` | Liệt kê tất cả bạn bè (có tìm kiếm/lọc) |
+| `find-user` | Tìm người dùng theo số điện thoại (trả về hồ sơ đầy đủ) |
+| `find-user-by-username` | Tìm người dùng theo username Zalo |
+| `send-friend-request` | Gửi lời mời kết bạn (hỗ trợ phân giải tên) |
+| `get-friend-requests` | Liệt kê lời mời kết bạn đang chờ |
+| `accept-friend-request` | Chấp nhận lời mời kết bạn |
+| `reject-friend-request` | Từ chối lời mời kết bạn |
+| `get-sent-requests` | Liệt kê lời mời kết bạn đã gửi |
+| `undo-friend-request` | Hủy lời mời kết bạn đã gửi |
+| `unfriend` | Xóa bạn |
+| `check-friend-status` | Kiểm tra trạng thái bạn bè/lời mời |
+| `set-friend-nickname` | Đặt biệt danh cho bạn bè |
+| `remove-friend-nickname` | Xóa biệt danh bạn bè |
+| `get-online-friends` | Liệt kê bạn bè đang online |
+| `get-close-friends` | Liệt kê bạn thân |
+| `get-friend-recommendations` | Gợi ý kết bạn |
 
-### Groups (22 actions)
+### Nhóm (22 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `groups` | List all groups (with search) |
-| `get-group-info` | Get group details |
-| `create-group` | Create a new group |
-| `add-to-group` | Add members to a group |
-| `remove-from-group` | Remove member from group |
-| `leave-group` | Leave a group |
-| `rename-group` | Rename a group |
-| `add-group-admin` / `remove-group-admin` | Manage group admins |
-| `change-group-owner` | Transfer group ownership |
-| `disperse-group` | Dissolve a group |
-| `update-group-settings` | Update group settings (name lock, msg history, join approval, etc.) |
-| `enable-group-link` / `disable-group-link` / `get-group-link` | Manage group invite links |
-| `get-pending-members` / `review-pending-members` | Manage join requests |
-| `block-group-member` / `unblock-group-member` / `get-group-blocked` | Group member blocking |
-| `get-group-members-info` | Get detailed member info |
-| `join-group-link` / `invite-to-groups` / `get-group-invites` / `join-group-invite` / `delete-group-invite` | Group invitations |
-| `change-group-avatar` | Change group avatar |
-| `upgrade-group-to-community` | Upgrade group to community |
-| `get-group-chat-history` | Get group message history |
+| `groups` | Liệt kê tất cả nhóm (có tìm kiếm) |
+| `get-group-info` | Lấy thông tin chi tiết nhóm |
+| `create-group` | Tạo nhóm mới |
+| `add-to-group` | Thêm thành viên vào nhóm |
+| `remove-from-group` | Xóa thành viên khỏi nhóm |
+| `leave-group` | Rời nhóm |
+| `rename-group` | Đổi tên nhóm |
+| `add-group-admin` / `remove-group-admin` | Quản lý admin nhóm |
+| `change-group-owner` | Chuyển quyền trưởng nhóm |
+| `disperse-group` | Giải tán nhóm |
+| `update-group-settings` | Cập nhật cài đặt nhóm (khóa tên, lịch sử tin nhắn, duyệt tham gia, v.v.) |
+| `enable-group-link` / `disable-group-link` / `get-group-link` | Quản lý link mời nhóm |
+| `get-pending-members` / `review-pending-members` | Quản lý yêu cầu tham gia |
+| `block-group-member` / `unblock-group-member` / `get-group-blocked` | Chặn thành viên nhóm |
+| `get-group-members-info` | Lấy thông tin chi tiết thành viên |
+| `join-group-link` / `invite-to-groups` / `get-group-invites` / `join-group-invite` / `delete-group-invite` | Lời mời nhóm |
+| `change-group-avatar` | Đổi ảnh đại diện nhóm |
+| `upgrade-group-to-community` | Nâng cấp nhóm thành cộng đồng |
+| `get-group-chat-history` | Lấy lịch sử tin nhắn nhóm |
 
-### Polls (6 actions)
+### Bình chọn (6 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `create-poll` | Create poll (supports `allowMultiChoices`, `allowAddNewOption`, `hideVotePreview`, `isAnonymous`, `expiredTime`) |
-| `vote-poll` | Vote on a poll option |
-| `lock-poll` | Lock a poll |
-| `get-poll-detail` | Get poll details and results |
-| `add-poll-options` | Add new options to a poll |
-| `share-poll` | Share a poll |
+| `create-poll` | Tạo bình chọn (hỗ trợ `allowMultiChoices`, `allowAddNewOption`, `hideVotePreview`, `isAnonymous`, `expiredTime`) |
+| `vote-poll` | Bỏ phiếu |
+| `lock-poll` | Khóa bình chọn |
+| `get-poll-detail` | Lấy chi tiết và kết quả bình chọn |
+| `add-poll-options` | Thêm tùy chọn mới |
+| `share-poll` | Chia sẻ bình chọn |
 
-### Reminders (6 actions)
+### Nhắc nhở (6 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `create-reminder` | Create a reminder with emoji, time, repeat |
-| `edit-reminder` | Edit an existing reminder |
-| `remove-reminder` | Delete a reminder |
-| `list-reminders` | List reminders in a thread |
-| `get-reminder` | Get full reminder details by ID |
-| `get-reminder-responses` | Get accept/reject member lists for a reminder |
+| `create-reminder` | Tạo nhắc nhở với emoji, thời gian, lặp lại |
+| `edit-reminder` | Sửa nhắc nhở |
+| `remove-reminder` | Xóa nhắc nhở |
+| `list-reminders` | Liệt kê nhắc nhở trong cuộc hội thoại |
+| `get-reminder` | Lấy chi tiết nhắc nhở theo ID |
+| `get-reminder-responses` | Lấy danh sách thành viên chấp nhận/từ chối nhắc nhở |
 
-### Conversation Management (16 actions)
+### Quản lý hội thoại (16 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `mute-conversation` / `unmute-conversation` | Mute/unmute (1h, 4h, forever) |
-| `pin-conversation` / `unpin-conversation` | Pin/unpin conversations |
-| `delete-chat` | Delete a conversation |
-| `hide-conversation` / `unhide-conversation` / `get-hidden-conversations` | Hide/show conversations |
-| `mark-unread` / `unmark-unread` / `get-unread-marks` | Manage unread marks |
-| `set-auto-delete-chat` / `get-auto-delete-chats` | Auto-delete chat (1 day, 7 days, 14 days) |
-| `get-archived-chats` / `update-archived-chat` | Archive/unarchive conversations |
-| `get-mute-status` / `get-pinned-conversations` | Query mute/pin status |
+| `mute-conversation` / `unmute-conversation` | Tắt/bật thông báo (1 giờ, 4 giờ, vĩnh viễn) |
+| `pin-conversation` / `unpin-conversation` | Ghim/bỏ ghim hội thoại |
+| `delete-chat` | Xóa hội thoại |
+| `hide-conversation` / `unhide-conversation` / `get-hidden-conversations` | Ẩn/hiện hội thoại |
+| `mark-unread` / `unmark-unread` / `get-unread-marks` | Quản lý đánh dấu chưa đọc |
+| `set-auto-delete-chat` / `get-auto-delete-chats` | Tự động xóa chat (1 ngày, 7 ngày, 14 ngày) |
+| `get-archived-chats` / `update-archived-chat` | Lưu trữ/bỏ lưu trữ hội thoại |
+| `get-mute-status` / `get-pinned-conversations` | Truy vấn trạng thái tắt tiếng/ghim |
 
-### Quick Messages & Auto-Reply (8 actions)
+### Tin nhắn nhanh & Tự động trả lời (8 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `list-quick-messages` / `add-quick-message` / `remove-quick-message` / `update-quick-message` | Manage quick reply templates |
-| `list-auto-replies` / `create-auto-reply` / `update-auto-reply` / `delete-auto-reply` | Manage auto-reply rules (with scope: everyone, strangers, specific friends) |
+| `list-quick-messages` / `add-quick-message` / `remove-quick-message` / `update-quick-message` | Quản lý mẫu trả lời nhanh |
+| `list-auto-replies` / `create-auto-reply` / `update-auto-reply` / `delete-auto-reply` | Quản lý quy tắc tự động trả lời (phạm vi: tất cả, người lạ, bạn bè cụ thể) |
 
-### Profile & Account (14 actions)
+### Hồ sơ & Tài khoản (14 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `me` | Get own full profile (username, avatar, cover, bio, phone, gender, dob, globalId, etc.) |
-| `status` | Check authentication status |
-| `get-user-info` | Get user profile info |
-| `last-online` | Check user's last online time |
-| `get-qr` | Get own QR code |
-| `update-profile` | Update name, DOB, gender |
-| `update-profile-bio` | Update bio |
-| `change-avatar` | Change account avatar by URL |
-| `delete-avatar` / `get-avatar-list` / `reuse-avatar` | Manage avatar history |
-| `get-biz-account` | Get business account info |
-| `get-full-avatar` | Get full-size avatar + background avatar |
-| `get-friend-board` | Get friend board list |
+| `me` | Lấy hồ sơ đầy đủ (username, avatar, cover, bio, SĐT, giới tính, ngày sinh, globalId, v.v.) |
+| `status` | Kiểm tra trạng thái xác thực |
+| `get-user-info` | Lấy thông tin hồ sơ người dùng |
+| `last-online` | Kiểm tra thời gian online cuối cùng |
+| `get-qr` | Lấy QR code của mình |
+| `update-profile` | Cập nhật tên, ngày sinh, giới tính |
+| `update-profile-bio` | Cập nhật tiểu sử |
+| `change-avatar` | Đổi ảnh đại diện theo URL |
+| `delete-avatar` / `get-avatar-list` / `reuse-avatar` | Quản lý lịch sử ảnh đại diện |
+| `get-biz-account` | Lấy thông tin tài khoản doanh nghiệp |
+| `get-full-avatar` | Lấy ảnh đại diện kích thước đầy đủ + ảnh nền |
+| `get-friend-board` | Lấy danh sách bảng bạn bè |
 
-### Settings (3 actions)
+### Cài đặt (3 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `get-settings` | Get all Zalo settings |
-| `update-setting` | Update a specific setting |
-| `update-active-status` | Toggle online/offline status |
+| `get-settings` | Lấy tất cả cài đặt Zalo |
+| `update-setting` | Cập nhật một cài đặt cụ thể |
+| `update-active-status` | Bật/tắt trạng thái online |
 
-### Stickers & Misc (3 actions)
+### Sticker & Khác (3 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `search-stickers` / `search-sticker-detail` | Search and browse stickers |
-| `parse-link` | Parse URL metadata |
-| `send-report` | Report a user/group |
+| `search-stickers` / `search-sticker-detail` | Tìm kiếm và duyệt sticker |
+| `parse-link` | Phân tích metadata URL |
+| `send-report` | Báo cáo người dùng/nhóm |
 
-### Notes & Labels (4 actions)
+### Ghi chú & Nhãn (4 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `create-note` / `edit-note` | Create/edit notes in conversations |
-| `get-boards` | Get note boards |
-| `get-labels` | Get contact labels |
+| `create-note` / `edit-note` | Tạo/sửa ghi chú trong hội thoại |
+| `get-boards` | Lấy bảng ghi chú |
+| `get-labels` | Lấy nhãn liên hệ |
 
-### Catalogs & Products (8 actions)
+### Danh mục & Sản phẩm (8 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `create-catalog` / `update-catalog` / `delete-catalog` / `get-catalogs` | Manage product catalogs |
-| `create-product` / `update-product` / `delete-product` / `get-products` | Manage products |
+| `create-catalog` / `update-catalog` / `delete-catalog` / `get-catalogs` | Quản lý danh mục sản phẩm |
+| `create-product` / `update-product` / `delete-product` / `get-products` | Quản lý sản phẩm |
 
-### Zalo Block (2 actions)
+### Chặn Zalo (2 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `zalo-block-user` | Block user at Zalo platform level |
-| `zalo-unblock-user` | Unblock user at Zalo platform level |
+| `zalo-block-user` | Chặn người dùng ở cấp nền tảng Zalo |
+| `zalo-unblock-user` | Bỏ chặn người dùng ở cấp nền tảng Zalo |
 
-### Bot Config — OpenClaw Layer (13 actions)
+### Cấu hình Bot — Lớp OpenClaw (13 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `block-user` / `unblock-user` | Block/unblock user in bot config |
-| `list-blocked` / `list-allowed` | List blocked/allowed users |
-| `block-user-in-group` / `unblock-user-in-group` | Per-group user blocking |
-| `allow-user-in-group` / `unallow-user-in-group` | Per-group user allowlist |
-| `list-blocked-in-group` / `list-allowed-in-group` | Query per-group lists |
-| `group-mention` | Set require-mention for a group |
+| `block-user` / `unblock-user` | Chặn/bỏ chặn người dùng trong cấu hình bot |
+| `list-blocked` / `list-allowed` | Liệt kê người dùng bị chặn/được phép |
+| `block-user-in-group` / `unblock-user-in-group` | Chặn người dùng theo nhóm |
+| `allow-user-in-group` / `unallow-user-in-group` | Danh sách cho phép người dùng theo nhóm |
+| `list-blocked-in-group` / `list-allowed-in-group` | Truy vấn danh sách theo nhóm |
+| `group-mention` | Thiết lập require-mention cho nhóm |
 
-### Utility (3 actions)
+### Tiện ích (3 actions)
 
-| Action | Description |
+| Action | Mô tả |
 |--------|-------------|
-| `get-alias-list` | Get friend alias list |
-| `get-related-friend-groups` | Get groups shared with a friend |
-| `get-multi-users-by-phones` | Bulk lookup users by phone numbers |
+| `get-alias-list` | Lấy danh sách biệt danh bạn bè |
+| `get-related-friend-groups` | Lấy nhóm chung với một người bạn |
+| `get-multi-users-by-phones` | Tra cứu hàng loạt người dùng theo số điện thoại |
 
 ---
 
-## Architecture
+## Kiến trúc
 
 ```
 zaloclaw/
-├── index.ts                    → Plugin entry point & tool registration
+├── index.ts                    → Điểm vào plugin & đăng ký tool
 ├── package.json
-├── openclaw.plugin.json        → Plugin manifest (JSON Schema for config)
+├── openclaw.plugin.json        → Manifest plugin (JSON Schema cho cấu hình)
 │
 ├── src/
-│   ├── channel/                → Channel lifecycle & message flow
-│   │   ├── channel.ts          → Plugin definition, account start/stop, dock
-│   │   ├── monitor.ts          → Inbound message processing & routing
-│   │   ├── send.ts             → Outbound message delivery & markdown
-│   │   ├── onboarding.ts       → QR code login flow (control panel)
-│   │   ├── image-downloader.ts → Media download handler
-│   │   └── probe.ts            → Connection health probe
+│   ├── channel/                → Vòng đời kênh & luồng tin nhắn
+│   │   ├── channel.ts          → Định nghĩa plugin, khởi động/dừng tài khoản, dock
+│   │   ├── monitor.ts          → Xử lý & định tuyến tin nhắn đến
+│   │   ├── send.ts             → Gửi tin nhắn đi & markdown
+│   │   ├── onboarding.ts       → Luồng đăng nhập QR code (bảng điều khiển)
+│   │   ├── image-downloader.ts → Xử lý tải media
+│   │   └── probe.ts            → Kiểm tra sức khỏe kết nối
 │   │
-│   ├── client/                 → Zalo API wrapper & account management
-│   │   ├── zalo-client.ts      → zca-js API lifecycle (login, getApi, etc.)
-│   │   ├── credentials.ts      → Credential persistence (disk I/O)
-│   │   ├── accounts.ts         → Multi-account resolution
-│   │   ├── qr-display.ts       → Terminal QR code renderer
-│   │   └── friend-request-store.ts → Friend request tracking
+│   ├── client/                 → Wrapper API Zalo & quản lý tài khoản
+│   │   ├── zalo-client.ts      → Vòng đời API zca-js (login, getApi, v.v.)
+│   │   ├── credentials.ts      → Lưu trữ thông tin đăng nhập (đọc/ghi file)
+│   │   ├── accounts.ts         → Phân giải đa tài khoản
+│   │   ├── qr-display.ts       → Hiển thị QR code trên terminal
+│   │   └── friend-request-store.ts → Theo dõi lời mời kết bạn
 │   │
-│   ├── config/                 → Configuration schema & management
-│   │   ├── config-schema.ts    → Zod schema with UI hints for control panel
-│   │   └── config-manager.ts   → Runtime config read/write (openclaw.json)
+│   ├── config/                 → Schema cấu hình & quản lý
+│   │   ├── config-schema.ts    → Schema Zod với gợi ý UI cho bảng điều khiển
+│   │   └── config-manager.ts   → Đọc/ghi cấu hình runtime (openclaw.json)
 │   │
-│   ├── tools/                  → Agent tool definitions
+│   ├── tools/                  → Định nghĩa công cụ agent
 │   │   └── tool.ts             → 147 action handlers
 │   │
-│   ├── features/               → Standalone feature modules
-│   │   ├── auto-unsend.ts      → Message recall
-│   │   ├── msg-id-store.ts     → Message ID ↔ cliMsgId mapping
-│   │   ├── quote-reply.ts      → Reply-to-message support
-│   │   ├── reaction-ack.ts     → Reaction acknowledgments
-│   │   ├── read-receipt.ts     → Read receipt handling
-│   │   └── sticker.ts          → Sticker search, cache & send
+│   ├── features/               → Các module tính năng độc lập
+│   │   ├── auto-unsend.ts      → Thu hồi tin nhắn
+│   │   ├── msg-id-store.ts     → Ánh xạ Message ID ↔ cliMsgId
+│   │   ├── quote-reply.ts      → Hỗ trợ trả lời tin nhắn
+│   │   ├── reaction-ack.ts     → Xác nhận reaction
+│   │   ├── read-receipt.ts     → Xử lý xác nhận đã đọc
+│   │   └── sticker.ts          → Tìm kiếm, cache & gửi sticker
 │   │
-│   ├── parsing/                → Text processing
-│   │   └── mention-parser.ts   → @mention detection & outbound mention resolution
+│   ├── parsing/                → Xử lý văn bản
+│   │   └── mention-parser.ts   → Phát hiện @mention & phân giải mention đi
 │   │
-│   ├── safety/                 → Output guardrails
-│   │   ├── output-filter.ts    → Redact sensitive content from responses
-│   │   └── thread-sandbox.ts   → Thread isolation
+│   ├── safety/                 → Bảo vệ đầu ra
+│   │   ├── output-filter.ts    → Lọc nội dung nhạy cảm khỏi phản hồi
+│   │   └── thread-sandbox.ts   → Cô lập thread
 │   │
-│   └── runtime/                → Shared runtime state
-│       ├── runtime.ts          → Runtime environment singleton
-│       ├── types.ts            → TypeScript type definitions
-│       └── status-issues.ts    → Health status reporting
+│   └── runtime/                → Trạng thái runtime chia sẻ
+│       ├── runtime.ts          → Singleton môi trường runtime
+│       ├── types.ts            → Định nghĩa kiểu TypeScript
+│       └── status-issues.ts    → Báo cáo trạng thái sức khỏe
 │
 ├── docs/
-│   └── FEATURES.md             → Feature spec & zca-js API notes
+│   └── FEATURES.md             → Đặc tả tính năng & ghi chú API zca-js
 │
 ├── .github/
-│   ├── workflows/ci.yml        → CI: install + typecheck on Node 22/24
-│   └── ISSUE_TEMPLATE/         → Bug report & feature request templates
+│   ├── workflows/ci.yml        → CI: install + typecheck trên Node 22/24
+│   └── ISSUE_TEMPLATE/         → Template báo lỗi & yêu cầu tính năng
 │
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
@@ -442,54 +442,54 @@ zaloclaw/
 └── .editorconfig
 ```
 
-### Message Flow
+### Luồng tin nhắn
 
 ```
-Zalo → zca-js event → monitor.ts
-  ├── Quote/reply context extraction (replied message text + sender)
-  ├── Access control (deny/allow, DM policy, group policy)
-  ├── Mention gating (group: skip if not @mentioned → buffer)
-  ├── Image processing (download only if mentioned or DM)
-  ├── Context assembly (sender info, buffered messages, media, quote)
-  ├── Envelope formatting → dispatch to OpenClaw agent
-  └── Agent response → send.ts → Zalo
+Zalo → sự kiện zca-js → monitor.ts
+  ├── Trích xuất ngữ cảnh trả lời/trích dẫn (nội dung + người gửi)
+  ├── Kiểm soát truy cập (chặn/cho phép, chính sách DM, chính sách nhóm)
+  ├── Mention gating (nhóm: bỏ qua nếu không @mention → đệm)
+  ├── Xử lý hình ảnh (chỉ tải khi được mention hoặc DM)
+  ├── Tổng hợp ngữ cảnh (thông tin người gửi, tin nhắn đệm, media, trích dẫn)
+  ├── Định dạng envelope → gửi đến OpenClaw agent
+  └── Phản hồi agent → send.ts → Zalo
 ```
 
 ---
 
-## Development
+## Phát triển
 
 ```bash
-# Type check
+# Kiểm tra kiểu
 npm run typecheck
 
-# Test locally
+# Kiểm tra local
 openclaw plugins install --link .
 openclaw gateway restart
 openclaw status
 ```
 
-No build step — OpenClaw loads `.ts` files directly via its runtime.
+Không cần bước build — OpenClaw tải trực tiếp file `.ts` qua runtime.
 
-### Adding a New Feature
+### Thêm tính năng mới
 
-1. Create a module in the appropriate `src/` subdirectory
-2. Wire it into `monitor.ts` (for inbound) or `send.ts` (for outbound)
-3. If it needs a tool action, add a handler in `src/tools/tool.ts`
-4. Run `npm run typecheck` to verify
-5. Test with `openclaw gateway restart`
+1. Tạo module trong thư mục con `src/` phù hợp
+2. Kết nối vào `monitor.ts` (cho tin đến) hoặc `send.ts` (cho tin đi)
+3. Nếu cần tool action, thêm handler trong `src/tools/tool.ts`
+4. Chạy `npm run typecheck` để xác minh
+5. Kiểm tra với `openclaw gateway restart`
 
 ---
 
-## Limitations
+## Hạn chế
 
-- **Single account per plugin instance** — multi-account is structurally supported but untested
-- **No streaming** — zca-js does not support streaming responses (`blockStreaming: true`)
-- **Rate limits** — Zalo may throttle or block accounts with high message volume
-- **Session stability** — zca-js sessions may expire; re-login via QR is required when cookies expire
-- **No end-to-end encryption** — messages pass through Zalo's servers as normal
-- **Message TTL** — per-message self-destruct (`messageTtl`) is sent to Zalo API but may not be enforced server-side; use `set-auto-delete-chat` for conversation-level auto-delete
+- **Một tài khoản mỗi instance plugin** — đa tài khoản được hỗ trợ về cấu trúc nhưng chưa được kiểm thử
+- **Không hỗ trợ streaming** — zca-js không hỗ trợ phản hồi streaming (`blockStreaming: true`)
+- **Giới hạn tốc độ** — Zalo có thể hạn chế hoặc chặn tài khoản gửi tin nhắn nhiều
+- **Ổn định phiên** — phiên zca-js có thể hết hạn; cần đăng nhập lại bằng QR khi cookie hết hạn
+- **Không mã hóa đầu cuối** — tin nhắn đi qua máy chủ Zalo như bình thường
+- **Message TTL** — tự hủy tin nhắn (`messageTtl`) được gửi tới Zalo API nhưng có thể không được áp dụng phía server; sử dụng `set-auto-delete-chat` cho tự động xóa cấp hội thoại
 
-## License
+## Giấy phép
 
 [MIT](LICENSE) © monasprox

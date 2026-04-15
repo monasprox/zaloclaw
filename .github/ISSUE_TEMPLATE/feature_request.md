@@ -1,16 +1,16 @@
 ---
-name: Feature Request
-about: Suggest a new feature or improvement
-title: "[Feature] "
+name: Yêu cầu tính năng
+about: Đề xuất tính năng mới hoặc cải tiến
+title: "[Tính năng] "
 labels: enhancement
 assignees: ""
 ---
 
-**Problem**
-What problem does this feature solve?
+**Vấn đề**
+Tính năng này giải quyết vấn đề gì?
 
-**Proposed Solution**
-How should it work?
+**Giải pháp đề xuất**
+Nó nên hoạt động như thế nào?
 
-**Alternatives Considered**
-Any other approaches you considered.
+**Các phương án thay thế đã xem xét**
+Các cách tiếp cận khác bạn đã cân nhắc.

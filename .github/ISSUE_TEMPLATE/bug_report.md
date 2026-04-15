@@ -1,25 +1,25 @@
 ---
-name: Bug Report
-about: Report a bug or unexpected behavior
-title: "[Bug] "
+name: Báo cáo lỗi
+about: Báo cáo lỗi hoặc hành vi bất thường
+title: "[Lỗi] "
 labels: bug
 assignees: ""
 ---
 
-**Description**
-A clear description of the bug.
+**Mô tả**
+Mô tả rõ ràng về lỗi.
 
-**Steps to Reproduce**
+**Các bước tái tạo**
 1. ...
 2. ...
 
-**Expected Behavior**
-What you expected to happen.
+**Hành vi mong đợi**
+Bạn mong đợi điều gì xảy ra.
 
-**Actual Behavior**
-What actually happened. Include error messages or logs if available.
+**Hành vi thực tế**
+Điều gì thực sự xảy ra. Bao gồm thông báo lỗi hoặc log nếu có.
 
-**Environment**
-- OpenClaw version: 
-- Node.js version: 
-- OS: 
+**Môi trường**
+- Phiên bản OpenClaw: 
+- Phiên bản Node.js: 
+- Hệ điều hành: 
