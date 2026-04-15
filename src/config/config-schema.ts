@@ -73,7 +73,7 @@ export const ZaloClawChannelConfigSchema = buildChannelConfigSchema(
   {
     uiHints: {
       "": {
-        label: "OpenClaw Zalo",
+        label: "ZaloClaw",
         help: "Channel status and configuration.",
       },
       dmPolicy: {

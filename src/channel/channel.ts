@@ -38,8 +38,8 @@ import * as readline from "readline";
 
 const meta = {
   id: "zaloclaw",
-  label: "OpenClaw Zalo",
-  selectionLabel: "OpenClaw Zalo Account",
+  label: "ZaloClaw",
+  selectionLabel: "ZaloClaw Account",
   docsPath: "/channels/zaloclaw",
   docsLabel: "zaloclaw",
   blurb: "Zalo personal account via zca-js library (no CLI needed).",
@@ -430,7 +430,7 @@ export const zaloClawPlugin: ChannelPlugin<ResolvedZaloClawAccount> = {
   },
   auth: {
     login: async ({ cfg, accountId, runtime }) => {
-      runtime.log(`Scan the QR code to link OpenClaw Zalo (account: ${accountId ?? DEFAULT_ACCOUNT_ID}).`);
+      runtime.log(`Scan the QR code to link ZaloClaw (account: ${accountId ?? DEFAULT_ACCOUNT_ID}).`);
       let qrFilePath: string | null = null;
       try {
         await loginWithQR(async (event) => {

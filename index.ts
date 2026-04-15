@@ -6,7 +6,7 @@ import { ZaloClawToolSchema, executeZaloClawTool } from "./src/tools/tool.js";
 
 const plugin = {
   id: "zaloclaw",
-  name: "OpenClaw Zalo",
+  name: "ZaloClaw",
   description: "Zalo personal account messaging via zca-js library",
   configSchema: emptyPluginConfigSchema(),
   register(api: OpenClawPluginApi) {
@@ -17,7 +17,7 @@ const plugin = {
     // Register agent tool
     api.registerTool({
       name: "zaloclaw",
-      label: "OpenClaw Zalo",
+      label: "ZaloClaw",
       description:
         "Complete Zalo personal account management via zca-js (130 actions). " +
         "Messaging: send, image, link, send-to-stranger, send-video, send-voice, send-sticker, send-card, send-bank-card, " +

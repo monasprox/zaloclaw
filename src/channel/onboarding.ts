@@ -48,7 +48,7 @@ function setZaloClawDmPolicy(
 async function noteZaloClawHelp(prompter: WizardPrompter): Promise<void> {
   await prompter.note(
     [
-      "OpenClaw Zalo Account login via QR code.",
+      "ZaloClaw Account login via QR code.",
       "",
       "Prerequisites:",
       "1) zca-js library (bundled with plugin)",
