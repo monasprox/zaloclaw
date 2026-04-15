@@ -28,6 +28,8 @@
    - [Tiện ích khác](#15-tiện-ích-khác-3-actions)
 6. [Luồng xử lý tin nhắn](#luồng-xử-lý-tin-nhắn)
 7. [Xử lý sự cố](#xử-lý-sự-cố)
+   - [Debug — Hướng dẫn chẩn đoán](#debug--hướng-dẫn-chẩn-đoán)
+   - [Di chuyển từ plugin cũ](#di-chuyển-từ-plugin-cũ-migration)
 
 ---
 
@@ -46,12 +48,55 @@ Cần có tài khoản Zalo cá nhân (không phải OA) và thiết bị có Za
 
 ## Cài đặt
 
+### Cấu trúc thư mục chuẩn
+
+Plugin phải được cài vào thư mục extensions của OpenClaw workspace:
+
+```
+~/.openclaw/workspace/.openclaw/extensions/zaloclaw/
+├── src/
+├── dist/
+├── docs/
+├── package.json
+├── openclaw.plugin.json
+└── ...
+```
+
+> **KHÔNG** cài vào `/tmp/`, `/home/user/Downloads/`, hoặc thư mục tạm khác. Plugin cần nằm trong `~/.openclaw/workspace/.openclaw/extensions/` để gateway quản lý đúng.
+
+### Bước 0: Kiểm tra plugin hiện có (BẮT BUỘC)
+
+Trước khi cài đặt, **phải** kiểm tra xem đã có plugin Zalo nào đang chạy chưa:
+
+```bash
+openclaw plugins list
+```
+
+**Nếu thấy plugin Zalo đã tồn tại** (ví dụ: `opclaw-zalo`, `zaloclaw` cũ, hoặc bất kỳ plugin nào liên quan đến Zalo):
+
+1. **DỪNG LẠI** — Không tự ý gỡ hoặc ghi đè
+2. **Báo cáo cho chủ sở hữu** (owner) danh sách plugin hiện có:
+   ```
+   Phát hiện plugin Zalo đang hoạt động:
+   - [tên plugin] v[version] tại [đường dẫn]
+   Cần gỡ plugin cũ trước khi cài zaloclaw mới. Xác nhận tiếp tục?
+   ```
+3. **Chờ xác nhận** từ owner trước khi thực hiện bước tiếp theo
+4. Sau khi được xác nhận, gỡ plugin cũ:
+   ```bash
+   openclaw plugins uninstall [tên-plugin-cũ]
+   ```
+
+**Nếu không có plugin Zalo nào** → tiếp tục Bước 1.
+
 ### Bước 1: Clone plugin
 
 ```bash
-git clone https://github.com/monasprox/zaloclaw.git /path/to/zaloclaw
-cd /path/to/zaloclaw
+git clone https://github.com/monasprox/zaloclaw.git ~/.openclaw/workspace/.openclaw/extensions/zaloclaw
+cd ~/.openclaw/workspace/.openclaw/extensions/zaloclaw
 ```
+
+> **Lưu ý:** Luôn clone vào đường dẫn `~/.openclaw/workspace/.openclaw/extensions/zaloclaw`. Đây là vị trí chuẩn để OpenClaw gateway nhận diện plugin.
 
 ### Bước 2: Cài dependencies
 
@@ -59,10 +104,12 @@ cd /path/to/zaloclaw
 npm install
 ```
 
+> **Quan trọng:** Nếu cần tái tạo `package-lock.json`, **phải dùng Node 22 (npm 10)**. npm 11 (Node 24) bỏ qua optional peer deps → CI sẽ fail. Chạy: `nvm use 22 && npm install && nvm use default`
+
 ### Bước 3: Đăng ký plugin với OpenClaw
 
 ```bash
-openclaw plugins install --link /path/to/zaloclaw
+openclaw plugins install --link ~/.openclaw/workspace/.openclaw/extensions/zaloclaw
 ```
 
 > **Lưu ý:** Dùng `--link` để liên kết trực tiếp từ thư mục source. KHÔNG tự tạo symlink thủ công.
@@ -80,6 +127,27 @@ openclaw status
 ```
 
 Kết quả mong muốn: `zaloclaw` hiển thị trong danh sách channels với status `ON`.
+
+### Di chuyển từ plugin cũ (migration)
+
+Nếu đang chuyển từ `opclaw-zalo` hoặc plugin ở vị trí khác:
+
+1. Kiểm tra đường dẫn cũ trong `~/.openclaw/openclaw.json`:
+   ```bash
+   grep -n "opclaw-zalo\|zaloclaw" ~/.openclaw/openclaw.json
+   ```
+2. Cập nhật tất cả đường dẫn trong `openclaw.json` trỏ về vị trí mới:
+   ```
+   ~/.openclaw/workspace/.openclaw/extensions/zaloclaw
+   ```
+3. Xóa thư mục plugin cũ (sau khi xác nhận với owner):
+   ```bash
+   rm -rf /đường/dẫn/plugin/cũ
+   ```
+4. Restart gateway:
+   ```bash
+   openclaw gateway restart
+   ```
 
 ---
 
@@ -1521,6 +1589,84 @@ Agent response → send.ts
 
 ## Xử lý sự cố
 
+### Debug — Hướng dẫn chẩn đoán
+
+Khi gặp lỗi, thực hiện các bước kiểm tra sau theo thứ tự:
+
+#### 1. Kiểm tra trạng thái tổng quát
+
+```bash
+openclaw status
+```
+
+Xác nhận:
+- Gateway đang chạy (`RUNNING`)
+- `zaloclaw` xuất hiện trong danh sách channels
+- Status channel là `ON` (không phải `OFF` hoặc `ERROR`)
+
+#### 2. Kiểm tra logs gateway
+
+```bash
+journalctl --user -u openclaw-gateway.service --no-pager -n 50
+```
+
+Tìm các pattern lỗi:
+- `Error loading plugin` → Plugin không load được (kiểm tra đường dẫn trong `openclaw.json`)
+- `Module not found` → Thiếu dependencies (chạy lại `npm install`)
+- `Session expired` / `Cookie expired` → Cần quét QR lại
+- `ECONNREFUSED` → Zalo API không truy cập được (kiểm tra mạng)
+
+#### 3. Kiểm tra plugin đã đăng ký đúng
+
+```bash
+openclaw plugins list
+```
+
+Nếu `zaloclaw` không xuất hiện:
+- Kiểm tra `openclaw.json` có entry đúng đường dẫn
+- Kiểm tra `openclaw.plugin.json` tồn tại trong thư mục plugin
+- Thử đăng ký lại: `openclaw plugins install --link ~/.openclaw/workspace/.openclaw/extensions/zaloclaw`
+
+#### 4. Kiểm tra file cấu hình
+
+```bash
+cat ~/.openclaw/openclaw.json | python3 -m json.tool
+```
+
+Nếu lệnh trên báo lỗi JSON → file config bị hỏng. Khôi phục từ backup:
+
+```bash
+cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
+openclaw gateway restart
+```
+
+#### 5. Kiểm tra credentials Zalo
+
+```bash
+ls -la ~/.openclaw/*zalo*credentials*
+```
+
+Nếu file không tồn tại hoặc rỗng → cần đăng nhập lại:
+
+```bash
+openclaw channels login --channel zaloclaw
+```
+
+#### 6. Kiểm tra npm lockfile (CI fails)
+
+Nếu CI báo lỗi `npm ci` với missing packages (ví dụ: `opusscript@0.0.8`):
+
+```bash
+# PHẢI dùng Node 22 để tái tạo lockfile
+source ~/.nvm/nvm.sh && nvm use 22
+rm -rf node_modules package-lock.json
+npm install
+nvm use default
+git add package-lock.json && git commit -m "fix: regenerate lockfile with npm 10"
+```
+
+> **Nguyên nhân:** npm 11 (Node 24) bỏ qua optional peer dependencies khi tạo lockfile, nhưng `npm ci` trên Node 22 yêu cầu chúng. Luôn dùng Node 22 (npm 10) khi thay đổi lockfile.
+
 ### Bot không phản hồi trong nhóm
 
 1. Kiểm tra `groupPolicy` — phải là `open` hoặc nhóm nằm trong `groups` config
@@ -1563,4 +1709,4 @@ openclaw status
 
 ---
 
-*Plugin Version: 2.0.0 | zca-js: 2.1.2 | OpenClaw: ≥ 2026.2.0*
+*Plugin Version: 2.0.2 | zca-js: 2.1.2 | OpenClaw: ≥ 2026.2.0*
