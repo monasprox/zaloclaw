@@ -1240,7 +1240,7 @@ export async function monitorZaloClawProvider(
         handler: (message) =>
           processMessage(message, account, config, core, runtime, statusSink),
         onDrop: (threadId, dropped) => {
-          logVerbose(core, runtime, `[${account.accountId}] queue overflow: dropped oldest message in thread ${threadId} (msgId=${(dropped.data as ZaloClawMessage).msgId ?? "?"})`);
+          logVerbose(core, runtime, `[${account.accountId}] queue overflow: dropped oldest message in thread ${threadId} (msgId=${dropped.data.msgId ?? "?"})`);
         },
         onTimeout: (threadId) => {
           runtime.error(`[${account.accountId}] message processing timed out for thread ${threadId}`);

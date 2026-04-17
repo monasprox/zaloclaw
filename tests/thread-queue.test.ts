@@ -321,9 +321,6 @@ describe("ThreadMessageQueue", () => {
   });
 
   it("enqueue returns true even when message is accepted after drop", () => {
-    let blockResolve!: () => void;
-    new Promise<void>((r) => { blockResolve = r; });
-
     const queue = new ThreadMessageQueue<string>({
       maxConcurrent: 1,
       maxPerThread: 1,
@@ -336,8 +333,6 @@ describe("ThreadMessageQueue", () => {
     // Queue is now full (maxPerThread=1) after adding one pending
     const result = queue.enqueue("t1", "overflow-but-accepted");
     expect(result).toBe(true);
-
-    blockResolve();
   });
 
   it("_reset clears all state", async () => {
