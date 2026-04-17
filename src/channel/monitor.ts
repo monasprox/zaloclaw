@@ -107,6 +107,33 @@ function cacheInboundMessage(threadId: string, data: {
   });
 }
 
+// --- Inbound message dedup cache: prevents processing same msgId twice (e.g. delivery-mirror) ---
+const processedMsgIds = new Map<string, number>();
+const DEDUP_TTL = 60_000; // 60 seconds
+const DEDUP_MAX = 2000;
+
+function isDuplicateMsg(msgId: string | undefined): boolean {
+  if (!msgId) return false;
+  const now = Date.now();
+  if (processedMsgIds.has(msgId)) return true;
+  // Evict expired entries when approaching limit
+  if (processedMsgIds.size >= DEDUP_MAX) {
+    for (const [id, ts] of processedMsgIds) {
+      if (now - ts > DEDUP_TTL) processedMsgIds.delete(id);
+    }
+    // If still at limit after eviction, remove oldest
+    if (processedMsgIds.size >= DEDUP_MAX) {
+      const oldest = processedMsgIds.keys().next().value;
+      if (oldest) processedMsgIds.delete(oldest);
+    }
+  }
+  processedMsgIds.set(msgId, now);
+  return false;
+}
+
+/** Exported for testing only. */
+export { isDuplicateMsg as _isDuplicateMsg, processedMsgIds as _processedMsgIds };
+
 function getQuoteForThread(threadId: string): SendMessageQuote | undefined {
   const cached = lastInboundMessage.get(threadId);
   if (!cached) return undefined;
@@ -1205,6 +1232,11 @@ export async function monitorZaloClawProvider(
       api.listener.on("message", (msg: Message) => {
         if (msg.isSelf) return;
         if (selfUid && msg.data.uidFrom === selfUid) return;
+        // Dedup by msgId to prevent duplicate processing of delivery-mirror events
+        if (isDuplicateMsg(msg.data.msgId)) {
+          logVerbose(core, runtime, `[${account.accountId}] skipping duplicate msgId ${msg.data.msgId}`);
+          return;
+        }
         const converted = convertToZaloClawMessage(msg);
         if (!converted) return;
         logVerbose(core, runtime, `[${account.accountId}] inbound message`);
