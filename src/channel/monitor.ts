@@ -25,6 +25,7 @@ import { addPendingRequest, removePendingRequest } from "../client/friend-reques
 import { recordReadReceipt } from "../features/read-receipt.js";
 import { recordMsgId } from "../features/msg-id-store.js";
 import { refreshCredentials } from "../client/credentials.js";
+import { ThreadMessageQueue, type ThreadQueueEntry } from "./thread-queue.js";
 
 export type ZaloClawMonitorOptions = {
   account: ResolvedZaloClawAccount;
@@ -1229,6 +1230,29 @@ export async function monitorZaloClawProvider(
         }
       }
 
+      // --- Per-thread message queue (serialized per conversation, global concurrency limit) ---
+      // Modeled after openclaw/telegram's @grammyjs/runner sink.concurrency pattern.
+      const messageQueue = new ThreadMessageQueue<ZaloClawMessage>({
+        maxConcurrent: 4,
+        maxPerThread: 10,
+        maxAgeMs: 5 * 60 * 1000, // 5 minutes
+        processingTimeoutMs: 3 * 60 * 1000, // 3 minutes
+        handler: (message) =>
+          processMessage(message, account, config, core, runtime, statusSink),
+        onDrop: (threadId, dropped) => {
+          logVerbose(core, runtime, `[${account.accountId}] queue overflow: dropped oldest message in thread ${threadId} (msgId=${dropped.data.msgId ?? "?"})`);
+        },
+        onTimeout: (threadId) => {
+          runtime.error(`[${account.accountId}] message processing timed out for thread ${threadId}`);
+        },
+        onError: (threadId, err) => {
+          runtime.error(`[${account.accountId}] Failed to process message in thread ${threadId}: ${String(err)}`);
+        },
+        onStale: (threadId, entry) => {
+          logVerbose(core, runtime, `[${account.accountId}] skipped stale message in thread ${threadId} (age=${Math.round((Date.now() - entry.enqueuedAt) / 1000)}s)`);
+        },
+      });
+
       api.listener.on("message", (msg: Message) => {
         if (msg.isSelf) return;
         if (selfUid && msg.data.uidFrom === selfUid) return;
@@ -1241,9 +1265,7 @@ export async function monitorZaloClawProvider(
         if (!converted) return;
         logVerbose(core, runtime, `[${account.accountId}] inbound message`);
         statusSink?.({ lastInboundAt: Date.now() });
-        processMessage(converted, account, config, core, runtime, statusSink).catch((err) => {
-          runtime.error(`[${account.accountId}] Failed to process message: ${String(err)}`);
-        });
+        messageQueue.enqueue(converted.threadId, converted);
       });
 
       api.listener.on("friend_event", (event: FriendEvent) => {
