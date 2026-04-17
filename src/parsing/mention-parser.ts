@@ -52,10 +52,43 @@ async function loadGroupMemberIndex(groupId: string): Promise<GroupMemberIndex> 
 
   const profilesResp = await api.getGroupMembersInfo(memberIds);
   const profiles = profilesResp?.profiles ?? {};
-  const members = Object.entries(profiles).map(([uid, p]: [string, any]) => ({
+  let members = Object.entries(profiles).map(([uid, p]: [string, any]) => ({
     uid,
     name: String(p.displayName ?? p.dName ?? p.zaloName ?? "").trim(),
   }));
+
+  // Fallback: getGroupMembersInfo returned empty profiles (can happen in some groups).
+  // Try getUserInfo which returns { changed_profiles: { [uid]: ProfileInfo } }.
+  if (members.length === 0) {
+    try {
+      const userInfoResp = await api.getUserInfo(memberIds);
+      const changedProfiles: Record<string, any> = (userInfoResp as any)?.changed_profiles ?? {};
+      members = Object.entries(changedProfiles).map(([uid, p]: [string, any]) => ({
+        uid,
+        name: String(p.displayName ?? p.display_name ?? p.zaloName ?? p.zalo_name ?? "").trim(),
+      }));
+    } catch {
+      // getUserInfo batch failed — fall through with empty members
+    }
+  }
+
+  // Last-resort fallback: fetch each member individually if batch getUserInfo also failed or returned empty
+  if (members.length === 0) {
+    const settled = await Promise.allSettled(
+      memberIds.map((uid) => api.getUserInfo(uid)),
+    );
+    for (const result of settled) {
+      if (result.status !== "fulfilled") continue;
+      const changedProfiles: Record<string, any> = (result.value as any)?.changed_profiles ?? {};
+      for (const [uid, p] of Object.entries(changedProfiles)) {
+        const name = String(
+          (p as any).displayName ?? (p as any).display_name ?? (p as any).zaloName ?? (p as any).zalo_name ?? "",
+        ).trim();
+        if (name) members.push({ uid, name });
+      }
+    }
+  }
+
   const index = buildIndex(members);
 
   if (groupMemberCache.size >= MEMBER_CACHE_MAX) {
