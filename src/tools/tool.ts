@@ -40,6 +40,7 @@ import {
 import { getPendingRequests, removePendingRequest } from "../client/friend-request-store.js";
 import { validateLocalFilePath } from "../safety/thread-sandbox.js";
 import { safeFetch, validateUrlForOutboundFetch } from "../safety/url-validator.js";
+import { resolveOutboundMentions } from "../parsing/mention-parser.js";
 import * as nodeFs from "node:fs";
 import * as nodePath from "node:path";
 import * as nodeOs from "node:os";
@@ -480,11 +481,19 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.threadId || !p.message) throw new Error("threadId and message required");
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
-      const content: any = { msg: p.message };
+      let sendMsg = p.message;
+      let sendMentions: any[] = [];
+      if (p.isGroup) {
+        const resolved = await resolveOutboundMentions(p.threadId, p.message);
+        sendMsg = resolved.text;
+        sendMentions = resolved.mentions;
+      }
+      const content: any = { msg: sendMsg };
+      if (sendMentions.length > 0) content.mentions = sendMentions;
       if (p.urgency !== undefined) content.urgency = p.urgency as Urgency;
       if (p.messageTtl !== undefined) content.ttl = p.messageTtl;
       const res = await a.sendMessage(content, p.threadId, type);
-      return ok({ success: true, msgId: res?.message?.msgId });
+      return ok({ success: true, msgId: res?.message?.msgId, mentionsResolved: sendMentions.length });
     }
 
     case "send-styled": {
@@ -499,12 +508,19 @@ async function dispatch(p: Params): Promise<ToolResult> {
         msg = converted.text;
         styles = converted.styles;
       }
+      let styledMentions: any[] = [];
+      if (p.isGroup) {
+        const resolved = await resolveOutboundMentions(p.threadId, msg);
+        msg = resolved.text;
+        styledMentions = resolved.mentions;
+      }
       const content: any = { msg };
       if (styles && styles.length > 0) content.styles = styles;
+      if (styledMentions.length > 0) content.mentions = styledMentions;
       if (p.urgency !== undefined) content.urgency = p.urgency as Urgency;
       if (p.messageTtl !== undefined) content.ttl = p.messageTtl;
       const res = await a.sendMessage(content, p.threadId, type);
-      return ok({ success: true, msgId: res?.message?.msgId, stylesApplied: styles?.length ?? 0 });
+      return ok({ success: true, msgId: res?.message?.msgId, stylesApplied: styles?.length ?? 0, mentionsResolved: styledMentions.length });
     }
 
     case "send-link": {
