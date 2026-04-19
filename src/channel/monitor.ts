@@ -23,6 +23,7 @@ import { getApi, getCurrentUid } from "../client/zalo-client.js";
 import { downloadImagesFromUrls } from "./image-downloader.js";
 import { addPendingRequest, removePendingRequest } from "../client/friend-request-store.js";
 import { recordReadReceipt } from "../features/read-receipt.js";
+import { handleGroupEvent } from "../features/group-event.js";
 import { recordMsgId } from "../features/msg-id-store.js";
 import { refreshCredentials } from "../client/credentials.js";
 import { ThreadMessageQueue, type ThreadQueueEntry } from "./thread-queue.js";
@@ -1283,6 +1284,17 @@ export async function monitorZaloClawProvider(
         } catch (err) {
           runtime.error(`[${account.accountId}] friend event error: ${String(err)}`);
         }
+      });
+
+      // Group events: join, leave, kick, admin changes
+      api.listener.on("group_event", (event: any) => {
+        handleGroupEvent(event, {
+          api,
+          config: (account.config as any)?.groupEvents,
+          log: (msg) => runtime.log?.(`[${account.accountId}] ${msg}`),
+        }).catch((err) => {
+          runtime.error?.(`[${account.accountId}] group_event handler error: ${String(err)}`);
+        });
       });
 
       // Reaction events from other users
