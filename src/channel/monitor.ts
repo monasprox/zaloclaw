@@ -25,6 +25,7 @@ import { addPendingRequest, removePendingRequest } from "../client/friend-reques
 import { recordReadReceipt } from "../features/read-receipt.js";
 import { handleGroupEvent } from "../features/group-event.js";
 import { collectGroupMessage } from "../features/passive-collector.js";
+import { checkInjection } from "../features/injection-guard.js";
 import { recordMsgId } from "../features/msg-id-store.js";
 import { refreshCredentials } from "../client/credentials.js";
 import { ThreadMessageQueue, type ThreadQueueEntry } from "./thread-queue.js";
@@ -1279,6 +1280,28 @@ export async function monitorZaloClawProvider(
             msgId: converted.msgId,
             wing: `zaloclaw_${account.accountId}`,
           }).catch(() => {}); // fire-and-forget, never block
+        }
+
+        // Injection guard: check group messages for prompt injection before AI queue
+        if (converted.metadata?.isGroup && typeof converted.content === "string") {
+          const _injContent = converted.content;
+          const _injGroupId = converted.threadId;
+          const _injUserId = converted.metadata?.fromId ?? "";
+          const _injUserName = converted.metadata?.senderName ?? "unknown";
+          // Run async in background — if injection detected, skip enqueue
+          checkInjection({
+            api,
+            groupId: _injGroupId,
+            userId: _injUserId,
+            userName: _injUserName,
+            message: _injContent,
+            log: (msg) => runtime.log?.(`[${account.accountId}] ${msg}`),
+          }).then((blocked) => {
+            if (!blocked) messageQueue.enqueue(converted.threadId, converted);
+          }).catch(() => {
+            messageQueue.enqueue(converted.threadId, converted); // fail-safe
+          });
+          return; // Always return here; enqueue happens inside .then()
         }
 
         messageQueue.enqueue(converted.threadId, converted);
