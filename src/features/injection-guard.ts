@@ -120,12 +120,17 @@ export async function checkInjection(ctx: InjectionGuardContext): Promise<boolea
     // Public warning
     record.warned = true;
     violations.set(key, record);
-    const warning =
-      `⚠️ @${ctx.userName} — Em phát hiện bạn đang cố gắng can thiệp vào cách em hoạt động.\n\n` +
+    const warningPrefix = "⚠️ ";
+    const mentionText = `@${ctx.userName}`;
+    const warningText =
+      `${warningPrefix}${mentionText} — Em phát hiện bạn đang cố gắng can thiệp vào cách em hoạt động.\n\n` +
       `Hành vi này không được phép trong nhóm. ` +
       `Nếu tiếp tục, bạn sẽ bị xóa khỏi nhóm tự động.`;
+    // Build proper mention so Zalo sends notification to the user
+    const mentionPos = warningPrefix.length; // position of '@' in string
+    const mention = { pos: mentionPos, uid: ctx.userId, len: mentionText.length };
     try {
-      await ctx.api.sendMessage({ msg: warning, mentions: [] }, ctx.groupId, 1);
+      await ctx.api.sendMessage({ msg: warningText, mentions: [mention] }, ctx.groupId, 1);
     } catch (err) {
       ctx.log?.(`[injection-guard] warning send failed: ${String(err)}`);
     }
