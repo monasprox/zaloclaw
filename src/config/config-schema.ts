@@ -73,10 +73,8 @@ const ZaloClawAccountSchema = z.object({
   responsePrefix: z.string().optional(),
   /** Group event handlers: welcome, leave, kick, admin alerts. */
   groupEvents: GroupEventsSchema,
-  /** Passive group message collector (requires epistemic + Elasticsearch). Default: false */
-  passiveCollector: z.object({
-    enabled: z.boolean().optional(),
-  }).optional(),
+  // passiveCollector intentionally omitted from channel schema
+  // Configure via plugins.entries.zaloclaw.passiveCollector (hidden from UI)
 });
 
 // --- Full channel schema (account + multi-account) ---
