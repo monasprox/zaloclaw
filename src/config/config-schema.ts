@@ -34,6 +34,20 @@ const ZaloGroupConfigSchema = z.object({
   tools: ToolPolicySchema,
 });
 
+// --- Group Events config ---
+
+const GroupEventsSchema = z.object({
+  enabled: z.boolean().optional(),
+  welcome: z.boolean().optional(),
+  leaveAlert: z.boolean().optional(),
+  adminAlert: z.boolean().optional(),
+  welcomeTemplate: z.string().optional(),
+  leaveTemplate: z.string().optional(),
+  kickTemplate: z.string().optional(),
+  adminAddTemplate: z.string().optional(),
+  adminRemoveTemplate: z.string().optional(),
+}).optional();
+
 // --- Per-account config ---
 
 const ZaloClawAccountSchema = z.object({
@@ -57,6 +71,8 @@ const ZaloClawAccountSchema = z.object({
   messagePrefix: z.string().optional(),
   /** Prefix prepended to agent responses. */
   responsePrefix: z.string().optional(),
+  /** Group event handlers: welcome, leave, kick, admin alerts. */
+  groupEvents: GroupEventsSchema,
 });
 
 // --- Full channel schema (account + multi-account) ---
