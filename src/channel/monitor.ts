@@ -1270,8 +1270,11 @@ export async function monitorZaloClawProvider(
         statusSink?.({ lastInboundAt: Date.now() });
 
         // Passive collector: store group messages to oc_verbatim WITHOUT calling AI
+        // Only runs if passiveCollector.enabled = true in config (default: false)
+        // Requires epistemic plugin + Elasticsearch at localhost:19200
+        const _passiveEnabled = (account.config as any)?.passiveCollector?.enabled === true;
         const _passiveSenderId = converted.metadata?.fromId ?? "";
-        if (converted.metadata?.isGroup && _passiveSenderId !== selfUid) {
+        if (_passiveEnabled && converted.metadata?.isGroup && _passiveSenderId !== selfUid) {
           collectGroupMessage({
             groupId: converted.threadId,
             senderId: _passiveSenderId,
