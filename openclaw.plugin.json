@@ -303,6 +303,39 @@
           },
           "defaultAccount": {
             "type": "string"
+          },
+          "groupEvents": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "welcome": {
+                "type": "boolean"
+              },
+              "leaveAlert": {
+                "type": "boolean"
+              },
+              "adminAlert": {
+                "type": "boolean"
+              },
+              "welcomeTemplate": {
+                "type": "string"
+              },
+              "leaveTemplate": {
+                "type": "string"
+              },
+              "kickTemplate": {
+                "type": "string"
+              },
+              "adminAddTemplate": {
+                "type": "string"
+              },
+              "adminRemoveTemplate": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false
