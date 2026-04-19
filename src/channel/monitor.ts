@@ -24,6 +24,7 @@ import { downloadImagesFromUrls } from "./image-downloader.js";
 import { addPendingRequest, removePendingRequest } from "../client/friend-request-store.js";
 import { recordReadReceipt } from "../features/read-receipt.js";
 import { handleGroupEvent } from "../features/group-event.js";
+import { collectGroupMessage } from "../features/passive-collector.js";
 import { recordMsgId } from "../features/msg-id-store.js";
 import { refreshCredentials } from "../client/credentials.js";
 import { ThreadMessageQueue, type ThreadQueueEntry } from "./thread-queue.js";
@@ -1266,6 +1267,20 @@ export async function monitorZaloClawProvider(
         if (!converted) return;
         logVerbose(core, runtime, `[${account.accountId}] inbound message`);
         statusSink?.({ lastInboundAt: Date.now() });
+
+        // Passive collector: store group messages to oc_verbatim WITHOUT calling AI
+        const _passiveSenderId = converted.metadata?.fromId ?? "";
+        if (converted.metadata?.isGroup && _passiveSenderId !== selfUid) {
+          collectGroupMessage({
+            groupId: converted.threadId,
+            senderId: _passiveSenderId,
+            senderName: converted.metadata?.senderName ?? _passiveSenderId,
+            content: typeof converted.content === "string" ? converted.content : "",
+            msgId: converted.msgId,
+            wing: `zaloclaw_${account.accountId}`,
+          }).catch(() => {}); // fire-and-forget, never block
+        }
+
         messageQueue.enqueue(converted.threadId, converted);
       });
 
