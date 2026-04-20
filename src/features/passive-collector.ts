@@ -49,6 +49,16 @@ export async function collectGroupMessage(opts: PassiveCollectorOptions): Promis
 
   if (!content?.trim()) return;
 
+  const nowUtc = new Date();
+  // Pre-format display_time in Asia/Ho_Chi_Minh for direct use without conversion
+  const _dtParts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour12: false,
+  }).formatToParts(nowUtc).reduce((acc: Record<string, string>, p) => { acc[p.type] = p.value; return acc; }, {});
+  const display_time = `${_dtParts.hour}:${_dtParts.minute}:${_dtParts.second} - ${_dtParts.day}/${_dtParts.month}/${_dtParts.year}`;
+
   const doc = {
     id: randomUUID(),
     wing,
@@ -61,7 +71,8 @@ export async function collectGroupMessage(opts: PassiveCollectorOptions): Promis
     group_id: groupId,
     message_id: msgId ?? null,
     turn_type: "passive",          // distinguish from AI-exchange turns
-    timestamp: new Date().toISOString(),
+    timestamp: nowUtc.toISOString(), // canonical UTC — never change
+    display_time,                    // pre-formatted GMT+7: HH:mm:ss - dd/MM/yyyy
     word_count_user: content.split(/\s+/).filter(Boolean).length,
     word_count_bot: 0,
     user_msg_len: content.length,
