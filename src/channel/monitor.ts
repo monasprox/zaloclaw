@@ -1276,13 +1276,14 @@ export async function monitorZaloClawProvider(
         const _passiveEnabled = (config as any)?.plugins?.entries?.zaloclaw?.config?.passiveCollector?.enabled === true;
         const _passiveSenderId = converted.metadata?.fromId ?? "";
         if (_passiveEnabled && converted.metadata?.isGroup && _passiveSenderId !== selfUid) {
+          const _shortGroupId = converted.threadId.slice(0, 13);
           collectGroupMessage({
             groupId: converted.threadId,
             senderId: _passiveSenderId,
             senderName: converted.metadata?.senderName ?? _passiveSenderId,
             content: typeof converted.content === "string" ? converted.content : "",
             msgId: converted.msgId,
-            wing: `zaloclaw_${account.accountId}`,
+            wing: `zaloclaw__${account.accountId}__group_${_shortGroupId}`,
           }).catch(() => {}); // fire-and-forget, never block
         }
 
