@@ -493,7 +493,11 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (p.urgency !== undefined) content.urgency = p.urgency as Urgency;
       if (p.messageTtl !== undefined) content.ttl = p.messageTtl;
       const res = await a.sendMessage(content, p.threadId, type);
-      return ok({ success: true, msgId: res?.message?.msgId, mentionsResolved: sendMentions.length });
+      const msgId = res?.message?.msgId;
+      if (!msgId) {
+        return ok({ success: false, error: "send failed: no msgId returned (likely rate-limited or silently dropped)", raw: res, mentionsResolved: sendMentions.length });
+      }
+      return ok({ success: true, msgId, mentionsResolved: sendMentions.length });
     }
 
     case "send-styled": {
@@ -520,7 +524,11 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (p.urgency !== undefined) content.urgency = p.urgency as Urgency;
       if (p.messageTtl !== undefined) content.ttl = p.messageTtl;
       const res = await a.sendMessage(content, p.threadId, type);
-      return ok({ success: true, msgId: res?.message?.msgId, stylesApplied: styles?.length ?? 0, mentionsResolved: styledMentions.length });
+      const styledMsgId = res?.message?.msgId;
+      if (!styledMsgId) {
+        return ok({ success: false, error: "send-styled failed: no msgId returned (likely rate-limited or silently dropped)", raw: res, stylesApplied: styles?.length ?? 0, mentionsResolved: styledMentions.length });
+      }
+      return ok({ success: true, msgId: styledMsgId, stylesApplied: styles?.length ?? 0, mentionsResolved: styledMentions.length });
     }
 
     case "send-link": {
@@ -528,7 +536,11 @@ async function dispatch(p: Params): Promise<ToolResult> {
       const a = await api();
       const type = p.isGroup ? ThreadType.Group : ThreadType.User;
       const res = await a.sendLink({ link: p.url }, p.threadId, type);
-      return ok({ success: true, msgId: res?.msgId });
+      const linkMsgId = res?.msgId;
+      if (!linkMsgId) {
+        return ok({ success: false, error: "send-link failed: no msgId returned (likely rate-limited or silently dropped)", raw: res });
+      }
+      return ok({ success: true, msgId: linkMsgId });
     }
 
     case "send-image": {
