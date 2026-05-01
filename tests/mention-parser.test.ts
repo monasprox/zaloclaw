@@ -166,6 +166,54 @@ describe("resolveOutboundMentions — getUserInfo fallback when getGroupMembersI
     expect(result.mentions[0].uid).toBe("uid_tuan");
   });
 
+  it("supplements partial getGroupMembersInfo results with getUserInfo for missing members", async () => {
+    const mockApi = {
+      getGroupInfo: vi.fn().mockResolvedValue({
+        gridInfoMap: { grp_partial: { memberIds: ["uid_a", "uid_b"] } },
+      }),
+      getGroupMembersInfo: vi.fn().mockResolvedValue({
+        profiles: { uid_a: { displayName: "An" } },
+        unchangeds_profile: [],
+      }),
+      getUserInfo: vi.fn().mockResolvedValue({
+        changed_profiles: { uid_b: { display_name: "Bình" } },
+        unchanged_profiles: {},
+        phonebook_version: 1,
+      }),
+    };
+    vi.mocked(getApi).mockResolvedValue(mockApi as any);
+
+    const result = await resolveOutboundMentions("grp_partial", "@[An] và @[Bình]");
+
+    expect(mockApi.getUserInfo).toHaveBeenCalledWith(["uid_b"]);
+    expect(result.mentions).toHaveLength(2);
+    expect(result.mentions.map((m) => m.uid).sort()).toEqual(["uid_a", "uid_b"]);
+  });
+
+  it("batches getGroupMembersInfo lookups for groups larger than 40 members", async () => {
+    const memberIds = Array.from({ length: 45 }, (_, i) => `uid_${i}`);
+    const mockApi = {
+      getGroupInfo: vi.fn().mockResolvedValue({
+        gridInfoMap: { grp_big: { memberIds } },
+      }),
+      getGroupMembersInfo: vi.fn().mockImplementation(async (ids: string[]) => ({
+        profiles: Object.fromEntries(ids.map((uid) => [uid, { displayName: `Member ${uid.slice(4)}` }])),
+        unchangeds_profile: [],
+      })),
+      getUserInfo: vi.fn(),
+    };
+    vi.mocked(getApi).mockResolvedValue(mockApi as any);
+
+    const result = await resolveOutboundMentions("grp_big", "Ping @[Member 44]");
+
+    expect(mockApi.getGroupMembersInfo).toHaveBeenCalledTimes(2);
+    expect(mockApi.getGroupMembersInfo.mock.calls[0][0]).toHaveLength(40);
+    expect(mockApi.getGroupMembersInfo.mock.calls[1][0]).toHaveLength(5);
+    expect(mockApi.getUserInfo).not.toHaveBeenCalled();
+    expect(result.mentions).toHaveLength(1);
+    expect(result.mentions[0].uid).toBe("uid_44");
+  });
+
   it("supports display_name field from UserBasic shape in getUserInfo response", async () => {
     const mockApi = {
       getGroupInfo: vi.fn().mockResolvedValue({

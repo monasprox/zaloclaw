@@ -80,8 +80,11 @@ const ZaloClawAccountSchema = z.object({
 // --- Full channel schema (account + multi-account) ---
 
 /** The top-level OpenClaw Zalo config Zod schema (Zod 4, has toJSONSchema). */
+const ZaloClawAccountSchemaForSdk =
+  ZaloClawAccountSchema as unknown as Parameters<typeof buildCatchallMultiAccountChannelSchema>[0];
+
 export const ZaloClawConfigSchema =
-  buildCatchallMultiAccountChannelSchema(ZaloClawAccountSchema);
+  buildCatchallMultiAccountChannelSchema(ZaloClawAccountSchemaForSdk);
 
 // --- UI-aware config schema for the control panel ---
 

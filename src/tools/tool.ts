@@ -1134,8 +1134,23 @@ async function dispatch(p: Params): Promise<ToolResult> {
       if (!p.groupId) throw new Error("groupId required");
       const gid = await resolveGroupId(p.groupId);
       const a = await api();
-      const res = await a.getGroupMembersInfo(gid);
-      return ok({ result: res });
+      const groupInfoResp = await a.getGroupInfo([gid]);
+      const groupInfo = groupInfoResp?.gridInfoMap?.[gid];
+      const memberIds = extractMemberIds(groupInfo);
+      const profiles: Record<string, any> = {};
+      const unchangedsProfile: string[] = [];
+      const batchSize = 40;
+      for (let i = 0; i < memberIds.length; i += batchSize) {
+        const batch = memberIds.slice(i, i + batchSize);
+        const res = await a.getGroupMembersInfo(batch);
+        Object.assign(profiles, res?.profiles ?? {});
+        unchangedsProfile.push(...((res?.unchangeds_profile ?? []) as string[]));
+      }
+      return ok({
+        groupId: gid,
+        totalMemberIds: memberIds.length,
+        result: { profiles, unchangeds_profile: unchangedsProfile },
+      });
     }
 
     case "join-group-link": {
