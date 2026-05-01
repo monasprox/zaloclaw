@@ -20,7 +20,12 @@ import type { ResolvedZaloClawAccount, ZaloClawFriend, ZaloClawGroup, ZaloClawMe
 import { getZaloClawRuntime } from "../runtime/runtime.js";
 import { sendMessageZaloClaw } from "./send.js";
 import { getApi, getCurrentUid } from "../client/zalo-client.js";
-import { downloadImagesFromUrls } from "./image-downloader.js";
+import * as fs from "fs";
+import * as path from "path";
+import * as crypto from "crypto";
+import sharp from "sharp";
+import { downloadImageFromUrl } from "./image-downloader.js";
+import { downloadFileFromUrl } from "./file-downloader.js";
 import { addPendingRequest, removePendingRequest } from "../client/friend-request-store.js";
 import { recordReadReceipt } from "../features/read-receipt.js";
 import { recordMsgId } from "../features/msg-id-store.js";
@@ -51,13 +56,11 @@ const groupMessageBuffer = new Map<string, Array<{
   senderName: string;
   content: string;
   timestamp: number;
-  mediaUrls?: string[];
-  localMediaPaths?: string[];
 }>>();
 const GROUP_BUFFER_MAX_MESSAGES = 50;
 const GROUP_BUFFER_MAX_AGE_S = 4 * 60 * 60;
 
-function bufferGroupMessage(groupId: string, entry: { senderName: string; content: string; timestamp: number; mediaUrls?: string[]; localMediaPaths?: string[] }): void {
+function bufferGroupMessage(groupId: string, entry: { senderName: string; content: string; timestamp: number }): void {
   let buffer = groupMessageBuffer.get(groupId) ?? [];
   buffer.push(entry);
   const cutoff = Math.floor(Date.now() / 1000) - GROUP_BUFFER_MAX_AGE_S;
@@ -134,6 +137,67 @@ function isDuplicateMsg(msgId: string | undefined): boolean {
 
 /** Exported for testing only. */
 export { isDuplicateMsg as _isDuplicateMsg, processedMsgIds as _processedMsgIds };
+
+const SYSTEM_NOTIFICATION_PATTERNS = [
+  /^Bạn vừa kết bạn với\b/i,
+  /^You (?:are|were) (?:now )?(?:friends|connected) with\b/i,
+  /^You just became friends with\b/i,
+];
+
+const IMAGE_URL_RE = /\.(?:jpe?g|png|gif|webp|bmp|svg|tiff?)(?:[?#]|$)/i;
+const GENERIC_FILE_URL_RE = /\.(?:pdf|docx?|xlsx?|pptx?|csv|txt|zip|rar)(?:[?#]|$)/i;
+
+function isSystemNotificationContent(content: string): boolean {
+  const normalized = content.trim();
+  return SYSTEM_NOTIFICATION_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function pushMediaUrl(mediaUrls: string[], mediaTypes: string[], url: unknown, mimeType: string): void {
+  if (typeof url !== "string" || !url.trim()) return;
+  const trimmed = url.trim();
+  if (mediaUrls.includes(trimmed)) return;
+  mediaUrls.push(trimmed);
+  mediaTypes.push(mimeType);
+}
+
+function mediaMimeFromObject(obj: Record<string, unknown>): string | undefined {
+  const raw = [
+    obj.type,
+    obj.mediaType,
+    obj.contentType,
+    obj.mimeType,
+    obj.msgType,
+  ].map((value) => typeof value === "string" || typeof value === "number" ? String(value).toLowerCase() : "").join(" ");
+
+  if (raw.includes("photo") || raw.includes("image")) return "image/jpeg";
+  if (raw.includes("video")) return "video/mp4";
+  if (raw.includes("audio") || raw.includes("voice")) return "audio/mpeg";
+  if (raw.includes("file") || raw.includes("attach")) return "application/octet-stream";
+  return undefined;
+}
+
+function looksLikeExplicitFileObject(obj: Record<string, unknown>, url: string): boolean {
+  const hasFileName = ["fileName", "filename", "name"].some((key) => typeof obj[key] === "string" && String(obj[key]).trim().length > 0);
+  const hasFileSize = ["fileSize", "size"].some((key) => obj[key] !== undefined && obj[key] !== null);
+  return hasFileName || hasFileSize || GENERIC_FILE_URL_RE.test(url) || IMAGE_URL_RE.test(url);
+}
+
+function fileSha256(filePath: string): string | undefined {
+  try {
+    return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+  } catch {
+    return undefined;
+  }
+}
+
+function looksLikeHtmlFile(filePath: string): boolean {
+  try {
+    const head = fs.readFileSync(filePath).subarray(0, 512).toString("utf8").trim().toLowerCase();
+    return head.includes("<!doctype") || head.includes("<html") || head.includes("<head");
+  } catch {
+    return false;
+  }
+}
 
 function getQuoteForThread(threadId: string): SendMessageQuote | undefined {
   const cached = lastInboundMessage.get(threadId);
@@ -309,24 +373,79 @@ function isGroupAllowed(params: {
   return false;
 }
 
+/**
+ * Extract filename from message text and rename downloaded files.
+ * Looks for patterns like "DonHang_280424_280426_1.csv" in the message content.
+ * Supports common file extensions: csv, pdf, docx, xlsx, txt, zip, rar, etc.
+ */
+function renameFilesFromMessageContent(messageText: string, localPaths: string[]): string[] {
+  // Match filenames with extensions (word chars, dots, hyphens, underscores)
+  const filenamePattern = /([\w][\w.\-_]*\.(?:csv|pdf|docx?|xlsx?|txt|zip|rar|7z|pptx?|odt|ods|jpg|jpeg|png|gif|bmp|webp|mp[34]|avi|mkv))/gi;
+  const matches = messageText.match(filenamePattern) ?? [];
+
+  if (matches.length === 0 || localPaths.length === 0) return localPaths;
+
+  const renamed: string[] = [];
+  const usedNames = new Set<string>();
+
+  for (let i = 0; i < localPaths.length; i++) {
+    const fp = localPaths[i];
+    const targetName = i < matches.length ? matches[i] : undefined;
+
+    if (targetName && !usedNames.has(targetName)) {
+      // Sanitize filename: remove path traversal chars
+      const safeName = targetName.replace(/[\/\\]/g, "_").substring(0, 120);
+      const dir = path.dirname(fp);
+      const newPath = path.join(dir, safeName);
+
+      try {
+        // Avoid overwriting existing files
+        let finalPath = newPath;
+        let counter = 1;
+        while (fs.existsSync(finalPath)) {
+          const ext = path.extname(safeName);
+          const base = path.basename(safeName, ext);
+          finalPath = path.join(dir, `${base}_${counter}${ext}`);
+          counter++;
+        }
+        fs.renameSync(fp, finalPath);
+        console.log(`[zaloclaw] Renamed ${fp} → ${finalPath}`);
+        renamed.push(finalPath);
+        usedNames.add(safeName);
+      } catch (err) {
+        console.warn(`[zaloclaw] Failed to rename ${fp}: ${err}`);
+        renamed.push(fp);
+      }
+    } else {
+      renamed.push(fp);
+    }
+  }
+
+  return renamed;
+}
+
 function extractMediaFromObject(obj: any, mediaUrls: string[], mediaTypes: string[]): string {
-  // Try href (link/attachment messages)
-  if (obj.href) {
-    mediaUrls.push(obj.href);
-    const attachmentType = (obj.type ?? "").toLowerCase();
-    let mimeType = "application/octet-stream";
-    if (attachmentType.includes("photo") || attachmentType.includes("image")) mimeType = "image/jpeg";
-    else if (attachmentType.includes("video")) mimeType = "video/mp4";
-    else if (attachmentType.includes("audio")) mimeType = "audio/mpeg";
-    mediaTypes.push(mimeType);
+  if (!obj || typeof obj !== "object") return "";
+  const record = obj as Record<string, unknown>;
+  const title = typeof record.title === "string" ? record.title : "";
+  const description = typeof record.description === "string" ? record.description : "";
+  const mimeType = mediaMimeFromObject(record);
+
+  // Only explicit full-size photo fields count as customer image evidence.
+  // A lone thumb is often a profile avatar, link preview, or system decoration.
+  const photoUrl = record.hdUrl || record.normalUrl || record.oriUrl;
+  if (photoUrl) {
+    pushMediaUrl(mediaUrls, mediaTypes, photoUrl, "image/jpeg");
   }
-  // Try hdUrl/normalUrl/oriUrl/thumb (photo messages)
-  const photoUrl = obj.hdUrl || obj.normalUrl || obj.oriUrl || obj.thumb;
-  if (photoUrl && !mediaUrls.includes(photoUrl)) {
-    mediaUrls.push(photoUrl);
-    mediaTypes.push("image/jpeg");
+
+  // href/url is accepted only when the object itself looks like a media/file attachment.
+  // This avoids treating generic link previews and friend-event assets as customer uploads.
+  const href = typeof record.href === "string" ? record.href : (typeof record.url === "string" ? record.url : "");
+  if (href && (mimeType || looksLikeExplicitFileObject(record, href))) {
+    pushMediaUrl(mediaUrls, mediaTypes, href, mimeType ?? (IMAGE_URL_RE.test(href) ? "image/jpeg" : "application/octet-stream"));
   }
-  return obj.title || obj.description || (mediaUrls.length > 0 ? "[Media attachment]" : "");
+
+  return title || description || (mediaUrls.length > 0 ? "[Media attachment]" : "");
 }
 
 function convertToZaloClawMessage(msg: Message): ZaloClawMessage | null {
@@ -356,31 +475,16 @@ function convertToZaloClawMessage(msg: Message): ZaloClawMessage | null {
   } else if (typeof data.content === "object" && data.content !== null) {
     const attachment = data.content as any;
     content = extractMediaFromObject(attachment, mediaUrls, mediaTypes);
-    if (!content) content = "[Media attachment]";
+    if (!content && mediaUrls.length > 0) content = "[Media attachment]";
   }
+
+  if (content && isSystemNotificationContent(content)) return null;
 
   if (!content.trim() && mediaUrls.length === 0) return null;
 
-  // Extract quoted/replied message media (Zalo sends image separately from mention)
+  // Keep quote text metadata only. Do not treat quoted attachments as current
+  // customer uploads; otherwise replying to an old image can inject stale media.
   const quote = (data as any).quote as { ownerId?: string; msg?: string; attach?: string; fromD?: string } | undefined;
-  if (quote?.attach) {
-    try {
-      const attachData = JSON.parse(quote.attach);
-      const attachList = Array.isArray(attachData) ? attachData : [attachData];
-      for (const item of attachList) {
-        const url = item.href || item.url || item.thumb;
-        if (url && !mediaUrls.includes(url)) {
-          mediaUrls.push(url);
-          const t = (item.type || "").toLowerCase();
-          if (t.includes("photo") || t.includes("image")) mediaTypes.push("image/jpeg");
-          else if (t.includes("video")) mediaTypes.push("video/mp4");
-          else mediaTypes.push("image/jpeg"); // default assume image
-        }
-      }
-    } catch {
-      // attach not parseable JSON, skip
-    }
-  }
 
   const isGroup = msg.type === ThreadType.Group;
   const threadId = msg.threadId;
@@ -421,6 +525,80 @@ function convertToZaloClawMessage(msg: Message): ZaloClawMessage | null {
     },
   };
 }
+
+function isImageAttachment(url: string, mediaType?: string): boolean {
+  const type = mediaType?.toLowerCase() ?? "";
+  return type.startsWith("image/") || IMAGE_URL_RE.test(url);
+}
+
+async function downloadInboundMedia(message: ZaloClawMessage): Promise<string[]> {
+  const urls = message.mediaUrls ?? [];
+  const mediaTypes = message.mediaTypes ?? [];
+  const downloaded: string[] = [];
+  const seenUrls = new Set<string>();
+  const seenHashes = new Set<string>();
+
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    if (seenUrls.has(url)) continue;
+    seenUrls.add(url);
+    const mediaType = mediaTypes[i];
+    const localPath = isImageAttachment(url, mediaType)
+      ? await downloadImageFromUrl(url)
+      : await downloadFileFromUrl(url);
+    if (!localPath) continue;
+    const hash = fileSha256(localPath);
+    if (hash && seenHashes.has(hash)) {
+      try { fs.rmSync(localPath, { force: true }); } catch {}
+      continue;
+    }
+    if (hash) seenHashes.add(hash);
+    if (!downloaded.includes(localPath)) downloaded.push(localPath);
+  }
+
+  return downloaded;
+}
+
+async function filterAttachableMediaPaths(paths: string[]): Promise<string[]> {
+  const filtered: string[] = [];
+
+  for (const filePath of paths) {
+    try {
+      const metadata = await sharp(filePath).metadata();
+      if (metadata.width && metadata.height) {
+        const minSide = Math.min(metadata.width, metadata.height);
+        const maxSide = Math.max(metadata.width, metadata.height);
+        const aspectRatio = maxSide / minSide;
+
+        if (minSide < 180) {
+          console.warn(`[zaloclaw] Dropping tiny image attachment ${filePath} (${metadata.width}x${metadata.height})`);
+          continue;
+        }
+        if (aspectRatio >= 4 && minSide < 300) {
+          console.warn(`[zaloclaw] Dropping banner-like image attachment ${filePath} (${metadata.width}x${metadata.height})`);
+          continue;
+        }
+      }
+    } catch {
+      if (IMAGE_URL_RE.test(filePath) || looksLikeHtmlFile(filePath)) {
+        console.warn(`[zaloclaw] Dropping invalid image attachment ${filePath}`);
+        continue;
+      }
+      // Non-image files (PDF/DOCX/etc.) are still valid attachments.
+    }
+
+    filtered.push(filePath);
+  }
+
+  return filtered;
+}
+
+/** Exported for testing only. */
+export {
+  convertToZaloClawMessage as _convertToZaloClawMessage,
+  filterAttachableMediaPaths as _filterAttachableMediaPaths,
+  isSystemNotificationContent as _isSystemNotificationContent,
+};
 
 async function processMessage(
   message: ZaloClawMessage,
@@ -588,18 +766,10 @@ async function processMessage(
 
     if (mentionGate.shouldSkip) {
       const resolvedName = senderName || await resolveUserName(senderId);
-      // Download media for buffered messages too, so they're available when bot is mentioned later
-      let bufferedLocalPaths: string[] | undefined;
-      if (message.mediaUrls && message.mediaUrls.length > 0) {
-        const downloaded = await downloadImagesFromUrls(message.mediaUrls);
-        bufferedLocalPaths = downloaded.filter((p): p is string => p !== undefined);
-      }
       bufferGroupMessage(chatId, {
         senderName: resolvedName,
         content: rawBody,
         timestamp: timestamp ?? Math.floor(Date.now() / 1000),
-        mediaUrls: message.mediaUrls,
-        localMediaPaths: bufferedLocalPaths,
       });
       logVerbose(core, runtime, `Buffered non-mention message in group ${chatId} from ${senderId}`);
       return;
@@ -694,30 +864,24 @@ async function processMessage(
 
   let localMediaPaths: string[] | undefined;
   if (shouldProcessImages && message.mediaUrls && message.mediaUrls.length > 0) {
-    console.log(`[zaloclaw] Downloading ${message.mediaUrls.length} images for native image support...`);
-    const downloadedPaths = await downloadImagesFromUrls(message.mediaUrls);
-    localMediaPaths = downloadedPaths.filter((p): p is string => p !== undefined);
+    console.log(`[zaloclaw] Downloading ${message.mediaUrls.length} attachment(s) for native support...`);
+    localMediaPaths = await filterAttachableMediaPaths(await downloadInboundMedia(message));
+
+    // Extract filename(s) from message content and rename downloaded files
+    if (localMediaPaths.length > 0 && rawBody) {
+      localMediaPaths = renameFilesFromMessageContent(rawBody, localMediaPaths);
+    }
 
     if (localMediaPaths.length > 0) {
-      console.log(`[zaloclaw] Downloaded ${localMediaPaths.length} images → ${localMediaPaths.join(", ")}`);
+      console.log(`[zaloclaw] Downloaded ${localMediaPaths.length} attachment(s) → ${localMediaPaths.join(", ")}`);
     }
   } else if (!shouldProcessImages && message.mediaUrls && message.mediaUrls.length > 0) {
-    logVerbose(core, runtime, `Skipping ${message.mediaUrls.length} image(s) in group ${chatId} (not mentioned)`);
+    logVerbose(core, runtime, `Skipping ${message.mediaUrls.length} attachment(s) in group ${chatId} (not mentioned)`);
   }
 
-  // Only use images from current message (includes reply-target attachments extracted by convertToZaloClawMessage)
-  // No buffer media merge — prevents cross-message media contamination
+  // Only use attachments from the current message. No buffer/quote media merge:
+  // this prevents stale image paths from being treated as customer uploads.
   const effectiveLocalMediaPaths = localMediaPaths && localMediaPaths.length > 0 ? localMediaPaths : undefined;
-
-  // Append media to body - use LOCAL paths if downloaded, otherwise URLs
-  let bodyForEnvelope = bodyWithSender;
-  if (shouldProcessImages) {
-    const mediaPathsForBody = effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : message.mediaUrls;
-    if (mediaPathsForBody && mediaPathsForBody.length > 0) {
-      const mediaInfo = mediaPathsForBody.map((p, idx) => `[Image ${idx + 1}: ${p}]`).join('\n');
-      bodyForEnvelope = `${bodyWithSender}\n\n${mediaInfo}`;
-    }
-  }
 
   const body = core.channel.reply.formatAgentEnvelope({
     channel: "Zalo JS",
@@ -725,7 +889,7 @@ async function processMessage(
     timestamp: timestamp ? timestamp * 1000 : undefined,
     previousTimestamp,
     envelope: envelopeOptions,
-    body: bodyForEnvelope,
+    body: bodyWithSender,
   });
 
   const ctxPayload = core.channel.reply.finalizeInboundContext({
@@ -750,9 +914,9 @@ async function processMessage(
     // Only attach media when mentioned (groups) or in DMs
     MediaPaths: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths : undefined,
     MediaPath: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? effectiveLocalMediaPaths[0] : undefined,
-    MediaUrls: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : (shouldProcessImages ? message.mediaUrls : undefined),
-    MediaUrl: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? undefined : (shouldProcessImages ? message.mediaUrls?.[0] : undefined),
-    MediaTypes: shouldProcessImages ? message.mediaTypes : undefined,
+    MediaUrls: undefined,
+    MediaUrl: undefined,
+    MediaTypes: shouldProcessImages && effectiveLocalMediaPaths && effectiveLocalMediaPaths.length > 0 ? message.mediaTypes : undefined,
   });
 
   await core.channel.session.recordInboundSession({
