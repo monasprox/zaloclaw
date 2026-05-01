@@ -16,22 +16,66 @@ type CachedGroupMembers = {
 
 const groupMemberCache = new Map<string, CachedGroupMembers>();
 
+function normalizeName(name: string): string {
+  return name.trim().normalize("NFC");
+}
+
+function nameKey(name: string): string {
+  return normalizeName(name).toLowerCase();
+}
+
+function profileName(profile: any): string {
+  return normalizeName(
+    String(
+      profile?.displayName ??
+      profile?.display_name ??
+      profile?.dName ??
+      profile?.zaloName ??
+      profile?.zalo_name ??
+      profile?.name ??
+      "",
+    ),
+  );
+}
+
 function buildIndex(members: Array<{ uid: string; name: string }>): GroupMemberIndex {
-  const cleaned = members.filter((m) => m.uid && m.name && m.name.trim().length > 0);
+  const cleaned = members
+    .map((m) => ({ uid: m.uid, name: normalizeName(m.name) }))
+    .filter((m) => m.uid && m.name.length > 0);
   const counts = new Map<string, number>();
   for (const m of cleaned) {
-    const key = m.name.toLowerCase();
+    const key = nameKey(m.name);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   const uniqueNameToUid = new Map<string, string>();
   for (const m of cleaned) {
-    const key = m.name.toLowerCase();
+    const key = nameKey(m.name);
     if (counts.get(key) === 1) uniqueNameToUid.set(key, m.uid);
   }
   const byNameLower = cleaned
-    .map((m) => ({ nameLower: m.name.toLowerCase(), nameOriginal: m.name, uid: m.uid }))
+    .map((m) => ({ nameLower: nameKey(m.name), nameOriginal: m.name, uid: m.uid }))
     .sort((a, b) => b.nameLower.length - a.nameLower.length);
   return { byNameLower, uniqueNameToUid };
+}
+
+function upsertMembersFromProfiles(
+  membersByUid: Map<string, { uid: string; name: string }>,
+  profiles: Record<string, any>,
+): void {
+  for (const [uid, p] of Object.entries(profiles)) {
+    const name = profileName(p);
+    if (name) membersByUid.set(uid, { uid, name });
+  }
+}
+
+async function fetchUserInfoProfiles(api: any, memberIds: string[]): Promise<Record<string, any>> {
+  if (memberIds.length === 0) return {};
+  try {
+    const userInfoResp = await api.getUserInfo(memberIds);
+    return (userInfoResp as any)?.changed_profiles ?? {};
+  } catch {
+    return {};
+  }
 }
 
 async function loadGroupMemberIndex(groupId: string): Promise<GroupMemberIndex> {
@@ -50,45 +94,40 @@ async function loadGroupMemberIndex(groupId: string): Promise<GroupMemberIndex> 
   }
   if (memberIds.length === 0) return buildIndex([]);
 
-  const profilesResp = await api.getGroupMembersInfo(memberIds);
-  const profiles = profilesResp?.profiles ?? {};
-  let members = Object.entries(profiles).map(([uid, p]: [string, any]) => ({
-    uid,
-    name: String(p.displayName ?? p.dName ?? p.zaloName ?? "").trim(),
-  }));
-
-  // Fallback: getGroupMembersInfo returned empty profiles (can happen in some groups).
-  // Try getUserInfo which returns { changed_profiles: { [uid]: ProfileInfo } }.
-  if (members.length === 0) {
+  const membersByUid = new Map<string, { uid: string; name: string }>();
+  const batchSize = 40;
+  for (let i = 0; i < memberIds.length; i += batchSize) {
+    const batch = memberIds.slice(i, i + batchSize);
     try {
-      const userInfoResp = await api.getUserInfo(memberIds);
-      const changedProfiles: Record<string, any> = (userInfoResp as any)?.changed_profiles ?? {};
-      members = Object.entries(changedProfiles).map(([uid, p]: [string, any]) => ({
-        uid,
-        name: String(p.displayName ?? p.display_name ?? p.zaloName ?? p.zalo_name ?? "").trim(),
-      }));
-    } catch {
-      // getUserInfo batch failed — fall through with empty members
+      const profilesResp = await api.getGroupMembersInfo(batch);
+      upsertMembersFromProfiles(membersByUid, profilesResp?.profiles ?? {});
+    } catch (err) {
+      console.error(`[mention-parser] getGroupMembersInfo batch failed for group ${groupId}:`, err);
     }
   }
 
-  // Last-resort fallback: fetch each member individually if batch getUserInfo also failed or returned empty
-  if (members.length === 0) {
+  // Fallback: getGroupMembersInfo can return empty or partial profiles in some groups.
+  // Supplement only the missing member IDs via getUserInfo.
+  let missingMemberIds = memberIds.filter((uid) => !membersByUid.has(uid));
+  if (missingMemberIds.length > 0) {
+    const changedProfiles = await fetchUserInfoProfiles(api, missingMemberIds);
+    upsertMembersFromProfiles(membersByUid, changedProfiles);
+  }
+
+  // Last-resort fallback: fetch missing members individually if batch getUserInfo failed or was partial.
+  missingMemberIds = memberIds.filter((uid) => !membersByUid.has(uid));
+  if (missingMemberIds.length > 0) {
     const settled = await Promise.allSettled(
-      memberIds.map((uid) => api.getUserInfo(uid)),
+      missingMemberIds.map((uid) => api.getUserInfo(uid)),
     );
     for (const result of settled) {
       if (result.status !== "fulfilled") continue;
       const changedProfiles: Record<string, any> = (result.value as any)?.changed_profiles ?? {};
-      for (const [uid, p] of Object.entries(changedProfiles)) {
-        const name = String(
-          (p as any).displayName ?? (p as any).display_name ?? (p as any).zaloName ?? (p as any).zalo_name ?? "",
-        ).trim();
-        if (name) members.push({ uid, name });
-      }
+      upsertMembersFromProfiles(membersByUid, changedProfiles);
     }
   }
 
+  const members = Array.from(membersByUid.values());
   const index = buildIndex(members);
 
   if (groupMemberCache.size >= MEMBER_CACHE_MAX) {
