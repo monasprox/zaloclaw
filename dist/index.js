@@ -2040,7 +2040,10 @@ async function processMessage(message, account, config, core, runtime2, statusSi
           }
           quoteMediaNote = " [with media]";
         } else {
-          quoteMediaNote = " [media unavailable \u2014 Zalo CDN URL may have expired]";
+          const looksLikeMedia = typeof attachObj === "object" && attachObj !== null && ["fileUrl", "href", "url", "hdUrl", "normalUrl", "oriUrl", "thumbUrl", "fileName"].some((key) => typeof attachObj[key] === "string" && String(attachObj[key]).trim().length > 0);
+          if (looksLikeMedia) {
+            quoteMediaNote = " [media unavailable \u2014 Zalo CDN URL may have expired]";
+          }
         }
       } catch {
       }

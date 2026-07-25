@@ -4,6 +4,13 @@ Tất cả thay đổi đáng chú ý của dự án được ghi lại trong fi
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.5.10] — 2026-07-25
+
+### Sửa lỗi
+- **Quoted file note false positive** — Fix v2.5.9 hiện note `[media unavailable]` cả khi reply vào tin nhắn text thường (không có file). Đã thêm kiểm tra: chỉ hiện note khi `attach` object thực sự chứa fields như `fileUrl`, `href`, `url`, `hdUrl`, `normalUrl`, `oriUrl`, `thumbUrl`, `fileName` (dấu hiệu của media/file thật).
+
+---
+
 ## [2.5.9] — 2026-07-25
 
 ### Sửa lỗi

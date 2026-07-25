@@ -753,9 +753,15 @@ async function processMessage(
           }
           quoteMediaNote = " [with media]";
         } else {
-          // Attach field exists but no URL could be extracted — likely expired CDN link
-          // or unsupported format. Inject a note so the agent knows media was present.
-          quoteMediaNote = " [media unavailable — Zalo CDN URL may have expired]";
+          // No URL extracted — only show note if attach looks like a real media/file object
+          // (has fileUrl, href, url, hdUrl, normalUrl, oriUrl, or fileName fields).
+          // Avoids false positives when attach contains only metadata (sticker IDs, etc.).
+          const looksLikeMedia = typeof attachObj === "object" && attachObj !== null &&
+            ["fileUrl", "href", "url", "hdUrl", "normalUrl", "oriUrl", "thumbUrl", "fileName"]
+              .some((key) => typeof (attachObj as Record<string, unknown>)[key] === "string" && String((attachObj as Record<string, unknown>)[key]).trim().length > 0);
+          if (looksLikeMedia) {
+            quoteMediaNote = " [media unavailable — Zalo CDN URL may have expired]";
+          }
         }
       } catch {
         // attach is not valid JSON — may be plain text, ignore
