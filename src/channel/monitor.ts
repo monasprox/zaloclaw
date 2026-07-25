@@ -752,6 +752,10 @@ async function processMessage(
             }
           }
           quoteMediaNote = " [with media]";
+        } else {
+          // Attach field exists but no URL could be extracted — likely expired CDN link
+          // or unsupported format. Inject a note so the agent knows media was present.
+          quoteMediaNote = " [media unavailable — Zalo CDN URL may have expired]";
         }
       } catch {
         // attach is not valid JSON — may be plain text, ignore

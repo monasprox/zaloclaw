@@ -873,6 +873,22 @@ import * as fs6 from "fs";
 import * as path3 from "path";
 import * as crypto3 from "crypto";
 import * as os3 from "os";
+function buildZaloCookieHeader2(cookie) {
+  if (!cookie) return void 0;
+  if (Array.isArray(cookie)) {
+    const pairs = cookie.map((c) => {
+      const key = c.key ?? c.name ?? "";
+      const value = c.value ?? "";
+      return key ? `${key}=${value}` : "";
+    }).filter(Boolean);
+    return pairs.length > 0 ? pairs.join("; ") : void 0;
+  }
+  if (typeof cookie === "object") {
+    const pairs = Object.entries(cookie).filter(([k]) => Boolean(k)).map(([k, v]) => `${k}=${v}`);
+    return pairs.length > 0 ? pairs.join("; ") : void 0;
+  }
+  return void 0;
+}
 async function downloadFileFromUrl(url, workspaceDir) {
   try {
     const targetDir = workspaceDir || path3.join(os3.homedir(), ".openclaw/media/inbound");
@@ -891,10 +907,42 @@ async function downloadFileFromUrl(url, workspaceDir) {
       return void 0;
     }
     const isZaloCdn = /^https:\/\/(?:[a-z0-9-]+\.)*(?:zalo|zadn|zdn)\.(?:vn|me)\//i.test(url);
-    const { buffer, contentType } = await safeFetch(url, {
-      maxSizeBytes: MAX_FILE_SIZE_BYTES,
-      skipSsrfCheck: isZaloCdn
-    });
+    let buffer;
+    let contentType;
+    if (isZaloCdn) {
+      const creds = loadCredentials();
+      const cookieHeader = creds?.cookie ? buildZaloCookieHeader2(creds.cookie) : void 0;
+      console.log(`[file-downloader] Zalo CDN url=${url.substring(0, 80)}`);
+      if (!cookieHeader) {
+        console.warn(`[file-downloader] Zalo CDN but no cookies found \u2014 download may fail`);
+      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3e4);
+      try {
+        const response = await fetch(url, {
+          signal: controller.signal,
+          redirect: "follow",
+          headers: {
+            ...cookieHeader ? { Cookie: cookieHeader } : {},
+            "User-Agent": creds?.userAgent ?? "Mozilla/5.0"
+          }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const arrayBuf = await response.arrayBuffer();
+        buffer = Buffer.from(arrayBuf);
+        contentType = response.headers.get("content-type");
+        console.log(`[file-downloader] Response status=${response.status} contentType=${contentType} size=${arrayBuf.byteLength}`);
+      } finally {
+        clearTimeout(timer);
+      }
+    } else {
+      const result = await safeFetch(url, {
+        maxSizeBytes: MAX_FILE_SIZE_BYTES,
+        skipSsrfCheck: false
+      });
+      buffer = result.buffer;
+      contentType = result.contentType;
+    }
     if (contentType) {
       console.log(`[file-downloader] Downloaded ${contentType} from ${url}`);
     }
@@ -923,6 +971,7 @@ var init_file_downloader = __esm({
   "src/channel/file-downloader.ts"() {
     "use strict";
     init_url_validator();
+    init_credentials();
     MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
   }
 });
@@ -1990,6 +2039,8 @@ async function processMessage(message, account, config, core, runtime2, statusSi
             }
           }
           quoteMediaNote = " [with media]";
+        } else {
+          quoteMediaNote = " [media unavailable \u2014 Zalo CDN URL may have expired]";
         }
       } catch {
       }

@@ -4,6 +4,14 @@ Tất cả thay đổi đáng chú ý của dự án được ghi lại trong fi
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.5.9] — 2026-07-25
+
+### Sửa lỗi
+- **file-downloader: Zalo CDN auth** — `file-downloader.ts` trước đây detect Zalo CDN nhưng không gửi auth cookies khi tải file, khiến CDN trả lỗi (404/403) cho các file attachment (PDF, PPTX, DOCX, CSV...). Giờ dùng cùng pattern với `image-downloader.ts`: load Zalo session cookies từ credentials và gửi trong header `Cookie` khi URL là Zalo CDN. File attachment trong DM và group mention giờ tải được đúng.
+- **Quoted file unavailable note** — Khi `quote.attach` có dữ liệu nhưng không extract được URL nào (expired CDN, format không hỗ trợ), agent giờ nhận được note rõ ràng: `[media unavailable — Zalo CDN URL may have expired]` thay vì im lặng. Agent biết file đã có nhưng không accessible để phản hồi phù hợp với user.
+
+---
+
 ## [2.5.6] — 2026-07-18
 
 ### Sửa lỗi
