@@ -4,6 +4,17 @@ Tất cả thay đổi đáng chú ý của dự án được ghi lại trong fi
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.5.11] — 2026-07-25
+
+### Sửa lỗi
+- **File trong reply/quote không được nhận diện (critical)** — `looksLikeExplicitFileObject` chưa nhận ra Zalo `quote.attach` file format có cấu trúc `{title, href, params}`. Cụ thể: field `params` là JSON string chứa `fileExt`/`fileSize`/`checksum` nhưng không được check. Field `title` chứa filename (ví dụ `hello-from-bun.md`) nhưng không có trong check list. Kết quả: URL từ `href` bị bỏ qua, file không được download.
+  - `looksLikeExplicitFileObject`: thêm check `params` JSON string có chứa `"fileExt"`, `"fileSize"`, hoặc `"checksum"`; thêm check `title` có extension (`/\.[a-z0-9]{1,10}$/i`)
+  - `mediaMimeFromObject`: detect `application/octet-stream` khi `params` JSON có `fileExt`/`fileSize`
+  - File `hello-from-bun.md` và các file kèm trong reply giờ được download đúng
+- **Diagnostic log** — giữ `quote.attach raw` log (đã thêm từ v2.5.10) để hỗ trợ debug các format Zalo mới trong tương lai
+
+---
+
 ## [2.5.10] — 2026-07-25
 
 ### Sửa lỗi

@@ -181,6 +181,9 @@ function mediaMimeFromObject(obj: Record<string, unknown>): string | undefined {
   // Zalo share.file objects carry fileUrl/fileName/extention fields — treat as binary attachment.
   // The numeric `type` field (e.g. 2) doesn't contain the word "file" so we detect explicitly.
   if (typeof obj.fileUrl === "string" || typeof obj.extention === "string") return "application/octet-stream";
+  // Zalo quote.attach file format: params JSON string contains fileExt/fileSize
+  const paramsStr = typeof obj.params === "string" ? obj.params : "";
+  if (paramsStr.includes('"fileExt"') || paramsStr.includes('"fileSize"')) return "application/octet-stream";
   return undefined;
 }
 
@@ -189,7 +192,13 @@ function looksLikeExplicitFileObject(obj: Record<string, unknown>, url: string):
   const hasFileSize = ["fileSize", "size"].some((key) => obj[key] !== undefined && obj[key] !== null);
   // fileUrl presence is itself strong evidence this is a file attachment (Zalo share.file protocol)
   const hasFileUrl = typeof obj.fileUrl === "string" && obj.fileUrl.trim().length > 0;
-  return hasFileName || hasFileSize || hasFileUrl || GENERIC_FILE_URL_RE.test(url) || IMAGE_URL_RE.test(url);
+  // Zalo quote.attach file format: params is a JSON string with fileExt/fileSize/checksum
+  const paramsStr = typeof obj.params === "string" ? obj.params : "";
+  const hasParamsFileInfo = paramsStr.length > 0 &&
+    (paramsStr.includes('"fileExt"') || paramsStr.includes('"fileSize"') || paramsStr.includes('"checksum"'));
+  // title field used as filename in Zalo quote file objects (e.g. "hello.md")
+  const hasTitleAsFilename = typeof obj.title === "string" && obj.title.trim().length > 0 && /\.[a-z0-9]{1,10}$/i.test(obj.title.trim());
+  return hasFileName || hasFileSize || hasFileUrl || hasParamsFileInfo || hasTitleAsFilename || GENERIC_FILE_URL_RE.test(url) || IMAGE_URL_RE.test(url);
 }
 
 function fileSha256(filePath: string): string | undefined {
@@ -737,6 +746,7 @@ async function processMessage(
     let quoteMediaNote = "";
     if (message.quote.attach) {
       try {
+        console.log(`[zaloclaw] quote.attach raw (${message.quote.attach.length} chars): ${message.quote.attach.substring(0, 300)}`);
         const attachObj = JSON.parse(message.quote.attach);
         const quoteMediaUrls: string[] = [];
         const quoteMediaTypes: string[] = [];

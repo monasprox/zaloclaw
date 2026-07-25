@@ -1593,13 +1593,18 @@ function mediaMimeFromObject(obj) {
   if (raw.includes("audio") || raw.includes("voice")) return "audio/mpeg";
   if (raw.includes("file") || raw.includes("attach")) return "application/octet-stream";
   if (typeof obj.fileUrl === "string" || typeof obj.extention === "string") return "application/octet-stream";
+  const paramsStr = typeof obj.params === "string" ? obj.params : "";
+  if (paramsStr.includes('"fileExt"') || paramsStr.includes('"fileSize"')) return "application/octet-stream";
   return void 0;
 }
 function looksLikeExplicitFileObject(obj, url) {
   const hasFileName = ["fileName", "filename", "name"].some((key) => typeof obj[key] === "string" && String(obj[key]).trim().length > 0);
   const hasFileSize = ["fileSize", "size"].some((key) => obj[key] !== void 0 && obj[key] !== null);
   const hasFileUrl = typeof obj.fileUrl === "string" && obj.fileUrl.trim().length > 0;
-  return hasFileName || hasFileSize || hasFileUrl || GENERIC_FILE_URL_RE.test(url) || IMAGE_URL_RE.test(url);
+  const paramsStr = typeof obj.params === "string" ? obj.params : "";
+  const hasParamsFileInfo = paramsStr.length > 0 && (paramsStr.includes('"fileExt"') || paramsStr.includes('"fileSize"') || paramsStr.includes('"checksum"'));
+  const hasTitleAsFilename = typeof obj.title === "string" && obj.title.trim().length > 0 && /\.[a-z0-9]{1,10}$/i.test(obj.title.trim());
+  return hasFileName || hasFileSize || hasFileUrl || hasParamsFileInfo || hasTitleAsFilename || GENERIC_FILE_URL_RE.test(url) || IMAGE_URL_RE.test(url);
 }
 function fileSha256(filePath) {
   try {
@@ -2025,6 +2030,7 @@ async function processMessage(message, account, config, core, runtime2, statusSi
     let quoteMediaNote = "";
     if (message.quote.attach) {
       try {
+        console.log(`[zaloclaw] quote.attach raw (${message.quote.attach.length} chars): ${message.quote.attach.substring(0, 300)}`);
         const attachObj = JSON.parse(message.quote.attach);
         const quoteMediaUrls = [];
         const quoteMediaTypes = [];
